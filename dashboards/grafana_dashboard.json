@@ -6,7 +6,7 @@
     "marketing-attribution",
     "markov",
     "shapley",
-    "duckdb"
+    "postgresql"
   ],
   "timezone": "browser",
   "schemaVersion": 39,
@@ -24,18 +24,18 @@
   "templating": {
     "list": [
       {
-        "name": "DS_DUCKDB",
+        "name": "DS_POSTGRES",
         "type": "datasource",
-        "pluginId": "duckdb",
-        "pluginName": "DuckDB",
-        "label": "DuckDB datasource",
+        "pluginId": "postgres",
+        "pluginName": "PostgreSQL",
+        "label": "PostgreSQL datasource",
         "hide": 0,
-        "query": "DuckDB",
+        "query": "postgres",
         "current": {
-          "text": "DuckDB",
-          "value": "DuckDB"
+          "text": "PostgreSQL",
+          "value": "PostgreSQL"
         },
-        "description": "Select the DuckDB datasource pointing at data/attribution_data.duckdb"
+        "description": "Select the PostgreSQL datasource."
       }
     ]
   },
@@ -55,7 +55,7 @@
       },
       "options": {
         "mode": "markdown",
-        "content": "# Omni-Channel Marketing Attribution\nMulti-touch attribution across **First-Click · Last-Click · Linear · Markov Chains · Shapley Value**. Source: DuckDB (`resultados_atribuicao`, `dim_canais`, `fato_jornadas`)."
+        "content": "# Omni-Channel Marketing Attribution\nMulti-touch attribution across **First-Click · Last-Click · Linear · Markov Chains · Shapley Value**. Source: PostgreSQL (`resultados_atribuicao`, `dim_canais`, `fato_jornadas`)."
       }
     },
     {
@@ -69,15 +69,15 @@
         "h": 4
       },
       "datasource": {
-        "type": "duckdb",
-        "uid": "${DS_DUCKDB}"
+        "type": "postgres",
+        "uid": "${DS_POSTGRES}"
       },
       "targets": [
         {
           "refId": "A",
           "datasource": {
-            "type": "duckdb",
-            "uid": "${DS_DUCKDB}"
+            "type": "postgres",
+            "uid": "${DS_POSTGRES}"
           },
           "editorMode": "code",
           "format": "table",
@@ -116,15 +116,15 @@
         "h": 4
       },
       "datasource": {
-        "type": "duckdb",
-        "uid": "${DS_DUCKDB}"
+        "type": "postgres",
+        "uid": "${DS_POSTGRES}"
       },
       "targets": [
         {
           "refId": "A",
           "datasource": {
-            "type": "duckdb",
-            "uid": "${DS_DUCKDB}"
+            "type": "postgres",
+            "uid": "${DS_POSTGRES}"
           },
           "editorMode": "code",
           "format": "table",
@@ -163,20 +163,20 @@
         "h": 4
       },
       "datasource": {
-        "type": "duckdb",
-        "uid": "${DS_DUCKDB}"
+        "type": "postgres",
+        "uid": "${DS_POSTGRES}"
       },
       "targets": [
         {
           "refId": "A",
           "datasource": {
-            "type": "duckdb",
-            "uid": "${DS_DUCKDB}"
+            "type": "postgres",
+            "uid": "${DS_POSTGRES}"
           },
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT AVG(CAST(converted AS DOUBLE)) AS v FROM fato_jornadas"
+          "rawSql": "SELECT AVG(CAST(converted AS INTEGER)) AS v FROM fato_jornadas"
         }
       ],
       "options": {
@@ -210,15 +210,15 @@
         "h": 4
       },
       "datasource": {
-        "type": "duckdb",
-        "uid": "${DS_DUCKDB}"
+        "type": "postgres",
+        "uid": "${DS_POSTGRES}"
       },
       "targets": [
         {
           "refId": "A",
           "datasource": {
-            "type": "duckdb",
-            "uid": "${DS_DUCKDB}"
+            "type": "postgres",
+            "uid": "${DS_POSTGRES}"
           },
           "editorMode": "code",
           "format": "table",
@@ -257,15 +257,15 @@
         "h": 10
       },
       "datasource": {
-        "type": "duckdb",
-        "uid": "${DS_DUCKDB}"
+        "type": "postgres",
+        "uid": "${DS_POSTGRES}"
       },
       "targets": [
         {
           "refId": "A",
           "datasource": {
-            "type": "duckdb",
-            "uid": "${DS_DUCKDB}"
+            "type": "postgres",
+            "uid": "${DS_POSTGRES}"
           },
           "editorMode": "code",
           "format": "table",
@@ -318,15 +318,15 @@
         "h": 10
       },
       "datasource": {
-        "type": "duckdb",
-        "uid": "${DS_DUCKDB}"
+        "type": "postgres",
+        "uid": "${DS_POSTGRES}"
       },
       "targets": [
         {
           "refId": "A",
           "datasource": {
-            "type": "duckdb",
-            "uid": "${DS_DUCKDB}"
+            "type": "postgres",
+            "uid": "${DS_POSTGRES}"
           },
           "editorMode": "code",
           "format": "table",
@@ -379,15 +379,15 @@
         "h": 10
       },
       "datasource": {
-        "type": "duckdb",
-        "uid": "${DS_DUCKDB}"
+        "type": "postgres",
+        "uid": "${DS_POSTGRES}"
       },
       "targets": [
         {
           "refId": "A",
           "datasource": {
-            "type": "duckdb",
-            "uid": "${DS_DUCKDB}"
+            "type": "postgres",
+            "uid": "${DS_POSTGRES}"
           },
           "editorMode": "code",
           "format": "table",
@@ -440,15 +440,15 @@
         "h": 8
       },
       "datasource": {
-        "type": "duckdb",
-        "uid": "${DS_DUCKDB}"
+        "type": "postgres",
+        "uid": "${DS_POSTGRES}"
       },
       "targets": [
         {
           "refId": "A",
           "datasource": {
-            "type": "duckdb",
-            "uid": "${DS_DUCKDB}"
+            "type": "postgres",
+            "uid": "${DS_POSTGRES}"
           },
           "editorMode": "code",
           "format": "table",

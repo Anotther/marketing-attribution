@@ -1,8 +1,8 @@
 """Generator for the Grafana dashboard JSON (PRD RF5.1, RF5.2).
 
 Produces ``dashboards/grafana_dashboard.json`` -- a portable, importable
-dashboard that queries the DuckDB store produced by the pipeline. The DuckDB
-datasource is referenced via a ``DS_DUCKDB`` input variable so the dashboard is
+dashboard that queries the PostgreSQL store produced by the pipeline. The Postgres
+datasource is referenced via a ``DS_POSTGRES`` input variable so the dashboard is
 portable across Grafana instances (on import the user picks the datasource).
 
 Run:  python dashboards/build_dashboard.py
@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-DUCKDB = {"type": "duckdb", "uid": "${DS_DUCKDB}"}
+POSTGRES = {"type": "postgres", "uid": "${DS_POSTGRES}"}
 
 MODEL_REVENUE_SQL = """
 SELECT
@@ -67,7 +67,7 @@ ORDER BY shapley_credit DESC
 def _target(sql: str, ref_id: str = "A") -> dict:
     return {
         "refId": ref_id,
-        "datasource": DUCKDB,
+        "datasource": POSTGRES,
         "editorMode": "code",
         "format": "table",
         "rawQuery": True,
@@ -83,7 +83,7 @@ def _stat(
         "type": "stat",
         "title": title,
         "gridPos": grid,
-        "datasource": DUCKDB,
+        "datasource": POSTGRES,
         "targets": [_target(sql)],
         "options": {
             "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": False},
@@ -102,7 +102,7 @@ def _barchart(panel_id: int, title: str, sql: str, grid: dict, unit: str = "none
         "type": "barchart",
         "title": title,
         "gridPos": grid,
-        "datasource": DUCKDB,
+        "datasource": POSTGRES,
         "targets": [_target(sql)],
         "options": {
             "orientation": "auto",
@@ -140,7 +140,7 @@ def build_dashboard() -> dict:
                 "content": (
                     "# Omni-Channel Marketing Attribution\n"
                     "Multi-touch attribution across **First-Click · Last-Click · Linear · "
-                    "Markov Chains · Shapley Value**. Source: DuckDB (`resultados_atribuicao`, "
+                    "Markov Chains · Shapley Value**. Source: PostgreSQL (`resultados_atribuicao`, "
                     "`dim_canais`, `fato_jornadas`)."
                 ),
             },
@@ -162,7 +162,7 @@ def build_dashboard() -> dict:
         _stat(
             4,
             "Conversion rate",
-            "SELECT AVG(CAST(converted AS DOUBLE)) AS v FROM fato_jornadas",
+            "SELECT AVG(CAST(converted AS INTEGER)) AS v FROM fato_jornadas",
             "percentunit",
             {"x": 12, "y": 2, "w": 6, "h": 4},
         ),
@@ -199,7 +199,7 @@ def build_dashboard() -> dict:
             "type": "table",
             "title": "Attribution results (detail)",
             "gridPos": {"x": 0, "y": 26, "w": 24, "h": 8},
-            "datasource": DUCKDB,
+            "datasource": POSTGRES,
             "targets": [_target(TABLE_SQL)],
             "options": {
                 "showHeader": True,
@@ -214,7 +214,7 @@ def build_dashboard() -> dict:
         "id": None,
         "uid": None,
         "title": "Marketing Attribution Pipeline",
-        "tags": ["marketing-attribution", "markov", "shapley", "duckdb"],
+        "tags": ["marketing-attribution", "markov", "shapley", "postgresql"],
         "timezone": "browser",
         "schemaVersion": 39,
         "version": 0,
@@ -228,17 +228,15 @@ def build_dashboard() -> dict:
         "templating": {
             "list": [
                 {
-                    "name": "DS_DUCKDB",
+                    "name": "DS_POSTGRES",
                     "type": "datasource",
-                    "pluginId": "duckdb",
-                    "pluginName": "DuckDB",
-                    "label": "DuckDB datasource",
+                    "pluginId": "postgres",
+                    "pluginName": "PostgreSQL",
+                    "label": "PostgreSQL datasource",
                     "hide": 0,
-                    "query": "DuckDB",
-                    "current": {"text": "DuckDB", "value": "DuckDB"},
-                    "description": (
-                        "Select the DuckDB datasource pointing at " "data/attribution_data.duckdb"
-                    ),
+                    "query": "postgres",
+                    "current": {"text": "PostgreSQL", "value": "PostgreSQL"},
+                    "description": "Select the PostgreSQL datasource.",
                 }
             ]
         },
