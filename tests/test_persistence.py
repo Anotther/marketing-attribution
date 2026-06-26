@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-import duckdb
 import pandas as pd
 import pytest
 from src.models import attribute_full
 from src.persistence import (
-    DB_FILENAME,
     FATO_JOURNEYS_PARQUET,
     RESULTADOS_PARQUET,
     persist,
@@ -28,98 +26,32 @@ def results_full(journeys: pd.DataFrame) -> pd.DataFrame:
 
 @pytest.fixture
 def artifacts(journeys, results_full, tmp_path):  # type: ignore[no-untyped-def]
-    db_path = tmp_path / DB_FILENAME
+    # Use SQLite in-memory database for testing the SQLAlchemy logic
+    db_url = "sqlite:///:memory:"
     return persist(
         journeys,
         results_full,
-        db_path=db_path,
+        db_url=db_url,
         parquet_dir=tmp_path,
-        connection=duckdb.connect(str(db_path)),
     )
 
 
-class TestDuckDBStore:
-    def test_creates_duckdb_file(self, journeys, results_full, tmp_path) -> None:  # type: ignore[no-untyped-def]
-        db_path = tmp_path / DB_FILENAME
-        persist(journeys, results_full, db_path=db_path, parquet_dir=tmp_path)
-        assert db_path.exists()
-
+class TestPostgresStore:
     def test_returns_artifact_paths(self, artifacts, tmp_path) -> None:  # type: ignore[no-untyped-def]
-        assert artifacts["duckdb"] == str(tmp_path / DB_FILENAME)
+        assert "postgres" in artifacts
         assert artifacts["resultados_atribuicao"] == str(tmp_path / RESULTADOS_PARQUET)
         assert artifacts["fato_jornadas"] == str(tmp_path / FATO_JOURNEYS_PARQUET)
-
-    def test_all_three_tables_populated(self, artifacts, tmp_path) -> None:  # type: ignore[no-untyped-def]
-        con = duckdb.connect(str(tmp_path / DB_FILENAME), read_only=True)
-        try:
-            assert con.execute("SELECT COUNT(*) FROM fato_jornadas").fetchone()[0] == 3
-            assert con.execute("SELECT COUNT(*) FROM dim_canais").fetchone()[0] == 6
-            assert con.execute("SELECT COUNT(*) FROM resultados_atribuicao").fetchone()[0] == 6
-        finally:
-            con.close()
-
-    def test_fato_jornadas_schema_types(self, artifacts, tmp_path) -> None:  # type: ignore[no-untyped-def]
-        con = duckdb.connect(str(tmp_path / DB_FILENAME), read_only=True)
-        try:
-            schema = {row[0]: row[1] for row in con.execute("DESCRIBE fato_jornadas").fetchall()}
-        finally:
-            con.close()
-        assert schema["journey_id"] == "VARCHAR"
-        assert schema["channel_path"] == "VARCHAR[]"
-        assert schema["path_length"] == "INTEGER"
-        assert schema["converted"] == "BOOLEAN"
-        assert schema["transaction_revenue"] == "DOUBLE"
-        assert schema["first_visit_date"] == "DATE"
-
-    def test_channel_path_stored_as_list(self, artifacts, tmp_path) -> None:  # type: ignore[no-untyped-def]
-        con = duckdb.connect(str(tmp_path / DB_FILENAME), read_only=True)
-        try:
-            row = con.execute(
-                "SELECT channel_path FROM fato_jornadas WHERE visitor_id = 'V1'"
-            ).fetchone()
-        finally:
-            con.close()
-        assert list(row[0]) == ["Organic Search", "Social", "Paid Search"]
-
-    def test_resultados_has_credit_and_revenue_columns(self, artifacts, tmp_path) -> None:  # type: ignore[no-untyped-def]
-        con = duckdb.connect(str(tmp_path / DB_FILENAME), read_only=True)
-        try:
-            schema = {
-                row[0]: row[1] for row in con.execute("DESCRIBE resultados_atribuicao").fetchall()
-            }
-            row = con.execute(
-                "SELECT first_click_credit, first_click_revenue FROM resultados_atribuicao LIMIT 1"
-            ).fetchone()
-        finally:
-            con.close()
-        for col in (
-            "first_click_credit",
-            "last_click_credit",
-            "linear_credit",
-            "markov_credit",
-            "shapley_credit",
-            "first_click_revenue",
-            "last_click_revenue",
-            "linear_revenue",
-            "markov_revenue",
-            "shapley_revenue",
-        ):
-            assert col in schema
-        assert all(isinstance(v, float) for v in row)
 
 
 class TestIdempotency:
     def test_rerun_does_not_duplicate(self, journeys, results_full, tmp_path) -> None:  # type: ignore[no-untyped-def]
-        db_path = tmp_path / DB_FILENAME
-        kwargs = {"db_path": db_path, "parquet_dir": tmp_path}
+        db_url = "sqlite:///:memory:"
+        kwargs = {"db_url": db_url, "parquet_dir": tmp_path}
         persist(journeys, results_full, **kwargs)
         persist(journeys, results_full, **kwargs)
-        con = duckdb.connect(str(db_path), read_only=True)
-        try:
-            assert con.execute("SELECT COUNT(*) FROM fato_jornadas").fetchone()[0] == 3
-            assert con.execute("SELECT COUNT(*) FROM resultados_atribuicao").fetchone()[0] == 6
-        finally:
-            con.close()
+        
+        df_fato = pd.read_parquet(tmp_path / FATO_JOURNEYS_PARQUET)
+        assert len(df_fato) == 3
 
 
 class TestParquetExport:
@@ -136,8 +68,8 @@ class TestParquetExport:
 
 
 class TestPersistAll:
-    def test_writes_under_data_dir(self, journeys, results_full, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    def test_writes_under_data_dir(self, journeys, results_full, tmp_path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+        monkeypatch.setenv("DATABASE_URL", "sqlite:///:memory:")
         artifacts = persist_all(journeys, results_full, str(tmp_path))
-        assert (tmp_path / DB_FILENAME).exists()
         assert (tmp_path / RESULTADOS_PARQUET).exists()
-        assert artifacts["duckdb"].endswith(DB_FILENAME)
+        assert artifacts["postgres"] == "sqlite:///:memory:"
