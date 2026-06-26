@@ -1,0 +1,480 @@
+{
+  "id": null,
+  "uid": null,
+  "title": "Marketing Attribution Pipeline",
+  "tags": [
+    "marketing-attribution",
+    "markov",
+    "shapley",
+    "duckdb"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 0,
+  "refresh": "",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "fiscalYearStartMonth": 0,
+  "liveNow": false,
+  "weekStart": "",
+  "editable": true,
+  "graphTooltip": 0,
+  "templating": {
+    "list": [
+      {
+        "name": "DS_DUCKDB",
+        "type": "datasource",
+        "pluginId": "duckdb",
+        "pluginName": "DuckDB",
+        "label": "DuckDB datasource",
+        "hide": 0,
+        "query": "DuckDB",
+        "current": {
+          "text": "DuckDB",
+          "value": "DuckDB"
+        },
+        "description": "Select the DuckDB datasource pointing at data/attribution_data.duckdb"
+      }
+    ]
+  },
+  "annotations": {
+    "list": []
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 2
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "# Omni-Channel Marketing Attribution\nMulti-touch attribution across **First-Click · Last-Click · Linear · Markov Chains · Shapley Value**. Source: DuckDB (`resultados_atribuicao`, `dim_canais`, `fato_jornadas`)."
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Total journeys",
+      "gridPos": {
+        "x": 0,
+        "y": 2,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "duckdb",
+        "uid": "${DS_DUCKDB}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "duckdb",
+            "uid": "${DS_DUCKDB}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) AS v FROM fato_jornadas"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "orientation": "auto",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Conversions",
+      "gridPos": {
+        "x": 6,
+        "y": 2,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "duckdb",
+        "uid": "${DS_DUCKDB}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "duckdb",
+            "uid": "${DS_DUCKDB}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) AS v FROM fato_jornadas WHERE converted"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "orientation": "auto",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Conversion rate",
+      "gridPos": {
+        "x": 12,
+        "y": 2,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "duckdb",
+        "uid": "${DS_DUCKDB}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "duckdb",
+            "uid": "${DS_DUCKDB}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT AVG(CAST(converted AS DOUBLE)) AS v FROM fato_jornadas"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "orientation": "auto",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Total revenue",
+      "gridPos": {
+        "x": 18,
+        "y": 2,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "duckdb",
+        "uid": "${DS_DUCKDB}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "duckdb",
+            "uid": "${DS_DUCKDB}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COALESCE(SUM(transaction_revenue), 0) AS v FROM fato_jornadas"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "orientation": "auto",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 6,
+      "type": "barchart",
+      "title": "Revenue by attribution model (per channel) — RF5.1",
+      "gridPos": {
+        "x": 0,
+        "y": 6,
+        "w": 12,
+        "h": 10
+      },
+      "datasource": {
+        "type": "duckdb",
+        "uid": "${DS_DUCKDB}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "duckdb",
+            "uid": "${DS_DUCKDB}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  channel_name,\n  first_click_revenue  AS \"First-Click\",\n  last_click_revenue   AS \"Last-Click\",\n  linear_revenue       AS \"Linear\",\n  markov_revenue       AS \"Markov\",\n  shapley_revenue      AS \"Shapley\"\nFROM resultados_atribuicao\nORDER BY channel_name"
+        }
+      ],
+      "options": {
+        "orientation": "auto",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0,
+        "showValue": "auto",
+        "stacking": "normal",
+        "groupWidth": 0.7,
+        "barWidth": 0.97,
+        "barRadius": 0,
+        "fullHighlight": false,
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 0,
+            "fillOpacity": 80
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 7,
+      "type": "barchart",
+      "title": "Conversion credit by model (per channel)",
+      "gridPos": {
+        "x": 12,
+        "y": 6,
+        "w": 12,
+        "h": 10
+      },
+      "datasource": {
+        "type": "duckdb",
+        "uid": "${DS_DUCKDB}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "duckdb",
+            "uid": "${DS_DUCKDB}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  channel_name,\n  first_click_credit  AS \"First-Click\",\n  last_click_credit   AS \"Last-Click\",\n  linear_credit       AS \"Linear\",\n  markov_credit       AS \"Markov\",\n  shapley_credit      AS \"Shapley\"\nFROM resultados_atribuicao\nORDER BY channel_name"
+        }
+      ],
+      "options": {
+        "orientation": "auto",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0,
+        "showValue": "auto",
+        "stacking": "normal",
+        "groupWidth": 0.7,
+        "barWidth": 0.97,
+        "barRadius": 0,
+        "fullHighlight": false,
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 0,
+            "fillOpacity": 80
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 8,
+      "type": "barchart",
+      "title": "Conversion funnel by channel (Sessions → Conversions) — RF5.2",
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 24,
+        "h": 10
+      },
+      "datasource": {
+        "type": "duckdb",
+        "uid": "${DS_DUCKDB}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "duckdb",
+            "uid": "${DS_DUCKDB}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  channel_name,\n  total_sessions    AS \"Sessions\",\n  total_conversions AS \"Conversions\"\nFROM dim_canais\nORDER BY total_sessions DESC"
+        }
+      ],
+      "options": {
+        "orientation": "auto",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0,
+        "showValue": "auto",
+        "stacking": "normal",
+        "groupWidth": 0.7,
+        "barWidth": 0.97,
+        "barRadius": 0,
+        "fullHighlight": false,
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 0,
+            "fillOpacity": 80
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 9,
+      "type": "table",
+      "title": "Attribution results (detail)",
+      "gridPos": {
+        "x": 0,
+        "y": 26,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "duckdb",
+        "uid": "${DS_DUCKDB}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "duckdb",
+            "uid": "${DS_DUCKDB}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  channel_name,\n  ROUND(first_click_credit, 3)  AS first_click,\n  ROUND(last_click_credit, 3)   AS last_click,\n  ROUND(linear_credit, 3)       AS linear,\n  ROUND(markov_credit, 3)       AS markov,\n  ROUND(shapley_credit, 3)      AS shapley,\n  ROUND(first_click_revenue, 2) AS first_click_rev,\n  ROUND(markov_revenue, 2)      AS markov_rev,\n  ROUND(shapley_revenue, 2)     AS shapley_rev\nFROM resultados_atribuicao\nORDER BY shapley_credit DESC"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Shapley",
+            "desc": true
+          }
+        ],
+        "cellHeight": "sm"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          }
+        },
+        "overrides": []
+      }
+    }
+  ],
+  "links": []
+}
