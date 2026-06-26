@@ -18,7 +18,7 @@
 ### Topics do Repositório
 
 ```
-marketing-attribution · markov-chains · shapley-value · bigquery · duckdb
+marketing-attribution · markov-chains · shapley-value · bigquery · postgresql
 data-engineering · python · docker · grafana · power-bi · parquet
 multi-touch-attribution · homelab · data-pipeline · analytics
 ```
@@ -46,7 +46,7 @@ multi-touch-attribution · homelab · data-pipeline · analytics
 | 1 | **Foundation** — Repo + Docker + CI | [#1](https://github.com/Anotther/marketing-attribution/issues/1) | Setup |
 | 2 | **Data In** — BigQuery Ingestion & Cleaning | [#2](https://github.com/Anotther/marketing-attribution/issues/2) | Ingestão |
 | 3 | **Models** — 5 Attribution Models | [#3](https://github.com/Anotther/marketing-attribution/issues/3) | Processamento |
-| 4 | **Data Out** — DuckDB + Parquet | [#4](https://github.com/Anotther/marketing-attribution/issues/4) | Persistência |
+| 4 | **Data Out** — PostgreSQL + Parquet | [#4](https://github.com/Anotther/marketing-attribution/issues/4) | Persistência |
 | 5 | **Viz** — Grafana + Power BI | [#5](https://github.com/Anotther/marketing-attribution/issues/5) | Visualização |
 | 6 | **Ship** — README + Docs + Review | [#6](https://github.com/Anotther/marketing-attribution/issues/6) | Polish |
 
@@ -135,6 +135,7 @@ BQ_START_DATE=2016-08-01
 BQ_END_DATE=2017-08-01
 DATA_DIR=/app/data
 LOG_LEVEL=INFO
+DATABASE_URL=postgresql://user:pass@postgres-dev:5432/marketing_db
 ```
 
 ---
@@ -197,7 +198,7 @@ marketing-attribution/
 │   │   ├── heuristics.py       # First, Last, Linear
 │   │   ├── markov.py           # Markov Chains
 │   │   └── shapley.py          # Shapley Value
-│   └── persistence.py          # DuckDB + Parquet
+│   └── persistence.py          # PostgreSQL + Parquet
 ├── tests/                      # Testes unitários
 └── dashboards/                 # Grafana JSON + Power BI
 ```
@@ -210,5 +211,5 @@ marketing-attribution/
 - **Project Board**: https://github.com/users/Anotther/projects/22
 - **PRD**: [`docs/PRD.md`](docs/PRD.md)
 - **GA Sample Dataset**: [bigquery-public-data.google_analytics_sample](https://console.cloud.google.com/bigquery?p=bigquery-public-data&d=google_analytics_sample)
-- **DuckDB Docs**: https://duckdb.org/docs/
+- **PostgreSQL Docs**: https://www.postgresql.org/docs/
 - **NetworkX Docs**: https://networkx.org/documentation/stable/

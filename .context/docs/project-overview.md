@@ -11,7 +11,7 @@ scaffoldVersion: "2.0.0"
 # Project Overview
 
 ## 1. Project Overview
-Este projeto consiste em uma aplicação Python empacotada em Docker, desenvolvida para processar jornadas de usuários a partir do BigQuery (Google Analytics sample). A aplicação aplica modelos avançados de atribuição multi-touch (Markov Chains e Shapley Value) para distribuir o crédito de conversão entre diferentes canais de marketing (Organic Search, Social, Direct, Referral, Paid Search, etc.). O resultado final é exportado em formato Parquet para ser visualizado no Grafana (via DuckDB) e Power BI, fornecendo insights profundos sobre o funil de conversão Omni-Channel.
+Este projeto consiste em uma aplicação Python empacotada em Docker, desenvolvida para processar jornadas de usuários a partir do BigQuery (Google Analytics sample). A aplicação aplica modelos avançados de atribuição multi-touch (Markov Chains e Shapley Value) para distribuir o crédito de conversão entre diferentes canais de marketing (Organic Search, Social, Direct, Referral, Paid Search, etc.). O resultado final é gravado no PostgreSQL para ser visualizado nativamente no Grafana e também exportado em Parquet para o Power BI, fornecendo insights profundos sobre o funil de conversão Omni-Channel.
 
 ## 2. Codebase Reference
 > **Semantic Snapshot**: Use `context({ action: "getMap", section: "all" })` for generated stack, architecture layers, key files, and dependency hotspots.
@@ -29,7 +29,7 @@ Este projeto consiste em uma aplicação Python empacotada em Docker, desenvolvi
 ## 5. Key Exports
 - Modelos de Atribuição (Markov Chains e Shapley Value)
 - Conexão e ingestão de dados via BigQuery API
-- Exportação Parquet com DuckDB
+- Exportação para PostgreSQL e Parquet
 
 ## 6. File Structure & Code Organization
 - `docs/` — Documentação do projeto (incluindo o PRD)
@@ -41,7 +41,7 @@ Este projeto consiste em uma aplicação Python empacotada em Docker, desenvolvi
 - **Linguagem Principal**: Python 3.11-slim
 - **Ambiente**: Docker (Standalone container)
 - **Manipulação de Dados**: Pandas, NetworkX
-- **Banco de Dados/Armazenamento**: BigQuery (Origem), DuckDB (Transformação Local), Parquet (Destino)
+- **Banco de Dados/Armazenamento**: BigQuery (Origem), PostgreSQL (Analytics), Parquet (Destino)
 - **Visualização**: Grafana, Power BI
 
 ## 8. Core Framework Stack

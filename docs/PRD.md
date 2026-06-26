@@ -7,7 +7,7 @@
 
 ## 1. Resumo Executivo
 
-Pipeline containerizado de atribuição de marketing multi-touch que processa jornadas de usuários do Google Analytics (BigQuery), aplica cinco modelos de atribuição (First-Click, Last-Click, Linear, **Markov Chains** e **Shapley Value**) e gera outputs estruturados em DuckDB e Parquet. Os resultados alimentam dashboards interativos em Grafana e Power BI, permitindo decisões baseadas em dados sobre alocação de orçamento de marketing.
+Pipeline containerizado de atribuição de marketing multi-touch que processa jornadas de usuários do Google Analytics (BigQuery), aplica cinco modelos de atribuição (First-Click, Last-Click, Linear, **Markov Chains** e **Shapley Value**) e gera outputs estruturados no PostgreSQL e em Parquet. Os resultados alimentam dashboards interativos em Grafana e Power BI, permitindo decisões baseadas em dados sobre alocação de orçamento de marketing.
 
 ### Métricas de Sucesso
 
@@ -16,7 +16,7 @@ Pipeline containerizado de atribuição de marketing multi-touch que processa jo
 | Cobertura de modelos implementados | 5/5 (First, Last, Linear, Markov, Shapley) |
 | Tempo de processamento end-to-end | < 5 min para dataset completo |
 | Taxa de jornadas processadas | > 95% do dataset de entrada |
-| Outputs gerados | DuckDB + Parquet validados e consumíveis |
+| Outputs gerados | PostgreSQL + Parquet validados e consumíveis |
 | Dashboards funcionais | Grafana + Power BI conectados |
 
 ---
@@ -86,16 +86,16 @@ flowchart LR
             SH["shapley.py\nShapley Value"]
         end
         
-        PER["persistence.py\n(DuckDB + Parquet)"]
+        PER["persistence.py\n(PostgreSQL + Parquet)"]
     end
 
-    subgraph Storage["💾 Volume Docker (./data)"]
-        DUCK[("attribution_data.duckdb")]
+    subgraph Storage["💾 Volume Docker / External"]
+        PG[("postgres-dev")]
         PQ["*.parquet files"]
     end
 
     subgraph Viz["📊 Visualização"]
-        GF["Grafana\n(DuckDB Plugin)"]
+        GF["Grafana\n(PostgreSQL)"]
         PBI["Power BI\n(Parquet via SMB)"]
     end
 
@@ -103,8 +103,8 @@ flowchart LR
     ING -->|"DataFrame"| PRE
     PRE -->|"Jornadas"| H & MK & SH
     H & MK & SH -->|"Resultados"| PER
-    PER --> DUCK & PQ
-    DUCK -->|"DuckDB Data Source"| GF
+    PER --> PG & PQ
+    PG -->|"PostgreSQL DataSource"| GF
     PQ -->|"Rede SMB"| PBI
 ```
 
@@ -122,17 +122,18 @@ graph TB
         end
         
         subgraph SharedVolume["Volume: ./data"]
-            DB[("DuckDB")]
             FILES["Parquet Files"]
         end
         
         subgraph ExistingInfra["Infraestrutura Existente"]
+            DB[("postgres-dev")]
             GRAFANA["Grafana Container"]
             SMB["SMB Share"]
         end
     end
 
     DC --> PythonContainer
+    APP --> DB
     APP --> SharedVolume
     DB --> GRAFANA
     FILES --> SMB
@@ -140,7 +141,7 @@ graph TB
 ```
 
 **Princípios de Integração:**
-- **Zero databases adicionais** — DuckDB é embutido, sem overhead de PostgreSQL/MySQL
+- **Banco Analítico** — PostgreSQL externo via `DATABASE_URL`
 - **Compartilhamento via Volume Docker** — sem APIs adicionais, sem service mesh
 - **Container efêmero** — executa, gera dados, encerra (mode one-shot)
 - **Agendamento opcional** — via cron do host ou restart policy do Docker
@@ -181,7 +182,7 @@ graph TB
 
 | ID | Requisito | Critério de Aceitação |
 |----|-----------|----------------------|
-| **RF4.1** | Criar banco DuckDB `attribution_data.duckdb` na pasta `data/` | Arquivo criado, acessível via DuckDB CLI |
+| **RF4.1** | Escrever resultados no banco PostgreSQL | Dados acessíveis na rede |
 | **RF4.2** | Tabela `fato_jornadas`: jornadas completas com metadata | Schema definido, dados inseridos, queryable |
 | **RF4.3** | Tabela `dim_canais`: dimensão de canais com métricas agregadas | Schema definido, unique por canal |
 | **RF4.4** | Tabela `resultados_atribuicao`: resultados dos 5 modelos | Schema definido, 1 row por canal × modelo |
@@ -226,12 +227,12 @@ graph TB
 | **BigQuery Client** | `google-cloud-bigquery` | ≥3.x | SDK oficial do Google |
 | **DataFrames** | `pandas` | ≥2.x | Standard para manipulação de dados |
 | **Grafos/Markov** | `networkx` | ≥3.x | Biblioteca de grafos de referência em Python |
-| **Banco Analítico** | `duckdb` | ≥1.x | Embutido, zero config, performático para analytics |
+| **Banco Analítico** | `sqlalchemy` | ≥2.x | ORM/Conexão PostgreSQL |
 | **Parquet** | `pyarrow` | ≥15.x | Engine de Parquet de referência |
 | **Testes** | `pytest` + `pytest-cov` | ≥8.x | Framework de testes padrão |
 | **Linting** | `ruff` | ≥0.5 | Linter + formatter all-in-one, rápido |
 | **Type Checking** | `mypy` | ≥1.x | Type checking estático |
-| **Visualização Ops** | Grafana + DuckDB Plugin | Existente | Já no homelab |
+| **Visualização Ops** | Grafana + PostgreSQL | Existente | Já no homelab |
 | **Visualização Exec** | Power BI | Desktop | Leitura direta de Parquet |
 
 ---
@@ -256,7 +257,6 @@ marketing-attribution/
 ├── credentials/                      # 🔒 NÃO commitado
 │   └── gcp-service-account.json
 ├── data/                             # 📁 Volume Docker — saída dos dados
-│   ├── attribution_data.duckdb
 │   ├── resultados_atribuicao.parquet
 │   ├── fato_jornadas.parquet
 │   └── funil_conversao.parquet
@@ -272,7 +272,7 @@ marketing-attribution/
 │   │   ├── heuristics.py             # First-Click, Last-Click, Linear
 │   │   ├── markov.py                 # Markov Chains (networkx)
 │   │   └── shapley.py                # Shapley Value
-│   └── persistence.py               # Salva em DuckDB e exporta Parquet
+│   └── persistence.py               # Salva no Postgres e exporta Parquet
 ├── tests/
 │   ├── __init__.py
 │   ├── conftest.py                   # Fixtures compartilhadas
@@ -356,7 +356,7 @@ gantt
         Testes dos modelos                           :f9, after f8, 2d
 
     section Fase 4: Persistência
-        persistence.py (DuckDB + Parquet)            :f10, after f9, 2d
+        persistence.py (Postgres + Parquet)            :f10, after f9, 2d
         Testes de persistência                       :f11, after f10, 1d
 
     section Fase 5: Visualização
@@ -375,7 +375,7 @@ gantt
 | **M1: Foundation** | Repo + Docker + CI funcionando | `docker compose build` sem erros |
 | **M2: Data In** | Dados do BigQuery extraídos e limpos | DataFrame com >10k sessões válidas |
 | **M3: Models** | 5 modelos implementados e testados | Testes passando, créditos somam 100% |
-| **M4: Data Out** | DuckDB + Parquet gerados | Arquivos queryáveis e validados |
+| **M4: Data Out** | PostgreSQL + Parquet gerados | Arquivos queryáveis e validados |
 | **M5: Viz** | Dashboards Grafana + Power BI | Screenshots no README |
 | **M6: Ship** | README completo, CI green | Pronto para portfolio |
 
@@ -387,7 +387,7 @@ gantt
 |---|-------|:------------:|:-------:|-----------|
 | R1 | Dataset do GA não acessível (billing, permissões) | Média | Alto | Manter dataset mock local para desenvolvimento; documentar setup do GCP |
 | R2 | Shapley Value computacionalmente caro (2^n subsets) | Alta | Médio | Limitar a canais com >X sessões; implementar caching de coalizões |
-| R3 | DuckDB plugin do Grafana instável | Baixa | Médio | Fallback para leitura de CSV/Parquet via plugin de arquivo |
+| R3 | Conexão com Postgres falha | Baixa | Médio | Validar DATABASE_URL via wait-for-it |
 | R4 | Schema do GA muda entre versões | Baixa | Baixo | Queries parametrizadas, validação de schema na ingestão |
 | R5 | Container consome muita RAM | Média | Médio | Chunk processing no pandas, monitorar via `docker stats` |
 | R6 | Credenciais GCP vazam no git | Baixa | **Crítico** | `.gitignore`, pre-commit hook, scan de secrets no CI |
@@ -400,7 +400,7 @@ gantt
 |---|-----------|---------|-----------------|
 | E1 | Aplicação Python containerizada | `Dockerfile` + `docker-compose.yml` + código fonte | `docker compose up` executa sem erros |
 | E2 | Relatório Técnico | `README.md` no repositório | Explica arquitetura, matemática (Markov/Shapley), e como rodar |
-| E3 | Arquivos de dados | `.duckdb` + `.parquet` na pasta `data/` | Gerados e validados pelo pipeline |
+| E3 | Arquivos de dados | Tabelas no Postgres + `.parquet` na pasta `data/` | Gerados e validados pelo pipeline |
 | E4 | Dashboard Grafana | `dashboards/grafana_dashboard.json` | Importável, renderiza dados reais |
 | E5 | Relatório Power BI | `dashboards/attribution_report.pbix` | Conecta aos Parquet, mostra ROI por canal |
 | E6 | Testes automatizados | `tests/` com pytest | Cobertura > 80%, CI green |

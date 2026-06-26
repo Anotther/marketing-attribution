@@ -12,11 +12,11 @@ scaffoldVersion: "2.0.0"
 # Database Specialist Agent Playbook
 
 ## 1. Mission
-Apoiar o time na modelagem de dados, otimização de consultas e na integração eficiente com o BigQuery e DuckDB. O agente deve garantir que a extração de dados brutos e a gravação de arquivos estruturados (Parquet) sigam boas práticas de performance.
+Apoiar o time na modelagem de dados, otimização de consultas e na integração eficiente com o BigQuery e PostgreSQL. O agente deve garantir que a extração de dados brutos e a gravação de arquivos estruturados (Parquet) sigam boas práticas de performance.
 
 ## 2. Responsibilities
 - Escrever consultas SQL otimizadas para o Google BigQuery (ex: unnest de repeated records em `ga_sessions_*`).
-- Projetar a modelagem local no DuckDB para agilizar junções em memória.
+- Projetar a modelagem no PostgreSQL para consultas analíticas rápidas no Grafana.
 - Garantir a persistência final em arquivos `.parquet` particionados adequadamente.
 - Identificar gargalos nas extrações de dados e sugerir reduções de custo/processamento.
 
@@ -32,18 +32,18 @@ Apoiar o time na modelagem de dados, otimização de consultas e na integração
 
 ## 5. Repository Starting Points
 - `src/queries/` - Consultas SQL (a ser criado)
-- `src/db/` ou `src/integration/` - Conexões com BQ/DuckDB
+- `src/db/` ou `src/integration/` - Conexões com BigQuery e PostgreSQL
 
 ## 6. Key Files
 - `src/config.py` (Variáveis de ambiente de DB)
 - `credentials/gcp-sa-key.json` (Contexto de segurança)
 
 ## 7. Architecture Context
-O sistema utiliza BigQuery apenas para leitura (origem) e DuckDB para gravação local ou agregações finais (destino parquet).
+O sistema utiliza BigQuery apenas para leitura (origem), armazenando os dados consolidados no PostgreSQL para o Grafana, além de exportar Parquet.
 
 ## 8. Key Symbols for This Agent
 - `BigQueryClient` (a ser implementado)
-- `DuckDBConnection` (a ser implementado)
+- Conexão via SQLAlchemy
 - `extract_sessions()` (função alvo)
 
 ## 9. Documentation Touchpoints
