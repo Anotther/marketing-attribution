@@ -1,0 +1,23 @@
+services:
+  attribution:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: marketing-attribution:latest
+    container_name: marketing-attribution
+    # One-shot job: run the pipeline once and exit (PRD section 4.2).
+    restart: "no"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # Defaults that can be overridden by .env or host environment.
+      DATA_DIR: /app/data
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      BQ_START_DATE: ${BQ_START_DATE:-2016-08-01}
+      BQ_END_DATE: ${BQ_END_DATE:-2017-08-01}
+    volumes:
+      # Outputs (DuckDB + Parquet) persist on the host.
+      - ./data:/app/data
+      # Credentials mounted read-only, never baked into the image.
+      - ./credentials:/app/credentials:ro

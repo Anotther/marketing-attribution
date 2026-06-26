@@ -1,0 +1,60 @@
+[project]
+name = "marketing-attribution"
+version = "0.1.0"
+description = "Omni-channel marketing attribution pipeline (Markov & Shapley)"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "C4", "RET"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E501"]
+
+[tool.mypy]
+# mypy analyses against 3.12 syntax so bundled third-party stubs (e.g. numpy 2.x)
+# that use PEP-695 `type` statements parse cleanly. The RUNTIME stays Python
+# 3.11 (Dockerfile `python:3.11-slim` + CI `setup-python: 3.11`): any 3.12-only
+# syntax would be caught by the CI test job, which runs on a real 3.11.
+python_version = "3.12"
+strict = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true
+files = ["src"]
+
+[[tool.mypy.overrides]]
+# Heavy third-party libs ship their own (py.typed) stubs; skipping their bodies
+# keeps strict checking on our own code only and avoids descending into e.g.
+# google-cloud-bigquery internals.
+module = [
+    "duckdb.*",
+    "networkx.*",
+    "google.cloud.*",
+    "google.*",
+    "pandas",
+    "pandas.*",
+    "numpy",
+    "numpy.*",
+]
+follow_imports = "skip"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --cov=src --cov-report=term-missing"
+filterwarnings = ["error"]
+
+[tool.coverage.run]
+branch = true
+source = ["src"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+exclude_also = ["if __name__ == .__main__.:", "raise NotImplementedError"]
