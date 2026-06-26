@@ -16,8 +16,29 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       BQ_START_DATE: ${BQ_START_DATE:-2016-08-01}
       BQ_END_DATE: ${BQ_END_DATE:-2017-08-01}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://user:pass@postgres-dev:5432/marketing_db}
     volumes:
       # Outputs (DuckDB + Parquet) persist on the host.
       - ./data:/app/data
       # Credentials mounted read-only, never baked into the image.
       - ./credentials:/app/credentials:ro
+
+  postgres-dev:
+    image: postgres:15-alpine
+    container_name: postgres-dev
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: marketing_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d marketing_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
