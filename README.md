@@ -1,138 +1,122 @@
-# Omni-Channel Marketing Attribution Pipeline
+# 📊 Pipeline de Atribuição de Marketing Omni-Channel
 
-Containerized multi-touch attribution pipeline that ingests Google Analytics journeys from BigQuery, applies **five attribution models** (First-Click, Last-Click, Linear, **Markov Chains**, **Shapley Value**) and persists results to **DuckDB + Parquet** for visualization in Grafana and Power BI.
+Um pipeline de engenharia de dados containerizado que extrai o histórico de sessões de marketing via BigQuery (Google Analytics) e aplica algoritmos avançados de atribuição para determinar a contribuição real de cada canal nas conversões do negócio. 
 
-> **Status:** Milestone 1 (Foundation) — config, logging, orchestration, Docker & CI in place. Ingestion, models and persistence arrive in M2–M5.
+Enquanto ferramentas comuns usam atribuição simplificada baseada em Last-Click, este projeto implementa modelos probabilísticos e baseados na teoria dos jogos (**Markov Chains** e **Shapley Value**) para distribuir o crédito de forma justa ao longo de toda a jornada de interações do usuário. 
+
+O resultado processado é enviado para um banco de dados **PostgreSQL** e salvo localmente em formato **Parquet**, permitindo a criação de dashboards rápidos e portáveis no Grafana e no Power BI.
 
 ---
 
-## Architecture
+## 🏛️ Arquitetura
 
-```
-BigQuery (GA sample) → ingestion → preprocessing → [heuristics · markov · shapley] → persistence → DuckDB + Parquet
-                                                                                                  ↓
-                                                                              Grafana (DuckDB) · Power BI (Parquet)
-```
+<!-- [INSERIR IMAGEM AQUI: Diagrama da Arquitetura do Sistema ilustrando desde a extração no BigQuery até a visualização no Grafana e Power BI] -->
 
-See [`docs/PRD.md`](docs/PRD.md) for the full design, data model and maths appendix.
+O pipeline opera nos seguintes estágios:
+1. **Ingestão**: Extrai dados transacionais do GA Sample Dataset localizados no BigQuery.
+2. **Pré-processamento**: Limpa as informações e agrega as sessões sequencialmente para montar a jornada de touchpoints de cada usuário individual.
+3. **Modelagem**: Aplica 5 abordagens matemáticas para cálculo de atribuição:
+   - First-Click e Last-Click (Heurísticos)
+   - Linear
+   - Markov Chains (Efeito de Remoção e Cadeias de Markov)
+   - Shapley Value (Teoria dos Jogos Cooperativos)
+4. **Persistência**: Grava as jornadas, as dimensões dos canais e os resultados agregados de todos os modelos.
 
-> **Status:** Milestones 1–4 complete + Grafana dashboard (M5). The pipeline ingests & cleans GA sessions, assembles journeys, computes all five attribution models, persists to DuckDB + Parquet, and ships a portable Grafana dashboard; only the Power BI report remains (M5).
+---
 
-## Quick start
+## 🚀 Como Executar (Quick Start)
+
+A execução é simplificada via Docker. O banco de dados analítico (PostgreSQL) e o script principal do pipeline são orquestrados simultaneamente via Docker Compose.
+
+### 1. Configuração do Ambiente
+Crie o arquivo de variáveis de ambiente a partir do exemplo fornecido e adicione suas credenciais do Google Cloud Platform (GCP) com acesso de leitura ao BigQuery:
 
 ```bash
-# 1. Configure environment
-cp .env.example .env              # edit GCP_PROJECT_ID etc.
-mkdir -p credentials              # place gcp-service-account.json here
+# 1. Prepare as variáveis de ambiente
+cp .env.example .env
 
-# 2. Run the pipeline in Docker (one-shot container)
+# 2. Crie o diretório para a chave e insira sua service account
+mkdir -p credentials
+# Coloque o seu arquivo JSON (ex: gcp-service-account.json) dentro da pasta credentials/
+```
+
+*(Lembre-se de ajustar o valor de `GCP_PROJECT_ID` no seu `.env` gerado).*
+
+### 2. Rodando o Pipeline
+O pipeline roda no formato de container efêmero (one-shot execution). Ele faz o processamento dos dados, efetua a gravação no banco, gera os artefatos locais e finaliza a execução com sucesso.
+
+```bash
 docker compose up --build
-
-# 3. Smoke test without GCP credentials
-docker compose run --rm attribution --dry-run
 ```
+> O Docker irá inicializar o banco PostgreSQL e na sequência rodar todo o fluxo em Python.
 
-## Local development
+---
+
+## 🛠️ Desenvolvimento Local
+
+Caso queira estender o pipeline ou rodar as rotinas de verificação localmente sem utilizar os containers:
 
 ```bash
+# Configurar o ambiente virtual (Python 3.11+)
 python -m venv venv && source venv/bin/activate
-pip install -r requirements-dev.txt
+pip install -r requirements-dev.txt -r requirements.txt
 
-# Quality gates (mirror CI)
+# Verificação de qualidade de código (Lint e Tipagem - integrados com o CI)
 ruff check . && ruff format --check . && mypy
+
+# Testes automatizados unitários
 pytest tests/ -v --cov=src
 ```
 
-## Configuration
+---
 
-All settings come from environment variables (see [`.env.example`](.env.example)):
+## 📁 Resultados e Artefatos (Outputs)
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `GCP_PROJECT_ID` | — *(required)* | GCP project holding the BigQuery dataset |
-| `GOOGLE_APPLICATION_CREDENTIALS` | — *(required)* | Path to the service-account JSON |
-| `BQ_DATASET` | `bigquery-public-data.google_analytics_sample` | Fully-qualified dataset |
-| `BQ_START_DATE` / `BQ_END_DATE` | `2016-08-01` / `2017-08-01` | Extraction window (ISO-8601) |
-| `DATA_DIR` | `/app/data` | Output volume for DuckDB/Parquet |
-| `LOG_LEVEL` | `INFO` | `DEBUG`/`INFO`/`WARNING`/`ERROR`/`CRITICAL` |
-| `BQ_MAX_RETRIES` | `3` | BigQuery retry attempts (exponential backoff) |
+O pipeline foi construído com a premissa de idempotência, então cada nova rodada recriará as tabelas e arquivos adequadamente. Após a conclusão sem erros, seus dados estarão disponíveis em:
 
-## Project layout
+**1. Volume Compartilhado (Parquet)**
+Arquivos persistidos nativamente no diretório `data/`:
+- `resultados_atribuicao.parquet`
+- `fato_jornadas.parquet`
 
-```
-src/
-├── main.py            # Entrypoint & orchestration (injectable ingester/persister)
-├── config.py          # ENV-driven settings
-├── logging_setup.py   # Structured logging + phase timing
-├── ingestion.py       # BigQuery extraction + cleaning (RF1.1-RF1.4)
-├── preprocessing.py   # Journey assembly + channel dimension (RF2.1-RF2.3, RF4.3)
-├── persistence.py     # DuckDB store + Parquet export (RF4.1-RF4.6)
-└── models/
-    ├── base.py        # AttributionModel ABC + shared helpers
-    ├── heuristics.py  # First / Last / Linear (RF3.1-RF3.3)
-    ├── markov.py      # Markov Chains + Removal Effect (RF3.4)
-    └── shapley.py     # Shapley Value (RF3.5)
-tests/                 # pytest suite (config, logging, main, ingestion, preprocessing, models, persistence)
-.github/workflows/ci.yml  # lint + typecheck + test + docker build
-```
+**2. PostgreSQL Analítico**
+O banco irá conter o esquema modelado pronto para leitura de dashboards:
+- `fato_jornadas`
+- `dim_canais`
+- `resultados_atribuicao`
 
-## Milestones
+---
 
-| # | Milestone | Status |
-|---|-----------|--------|
-| M1 | Foundation — repo, Docker, CI, config, logging | ✅ |
-| M2 | Data In — BigQuery ingestion & cleaning | ✅ |
-| M3 | Models — First/Last/Linear/Markov/Shapley | ✅ |
-| M4 | Data Out — DuckDB + Parquet persistence | ✅ |
-| M5 | Viz — Grafana dashboard | ✅ (Grafana) · ⏳ (Power BI) |
-| M6 | Ship — README polish, CI green | ⏳ |
+## 📈 Visualização: Grafana
 
-## Output artifacts
+A aplicação acompanha um painel analítico no Grafana validando todas as pontas da solução.
 
-Running the pipeline writes to the `data/` volume:
+**Painéis disponíveis:**
+- Comparação interativa de Receita Atribuída por Modelo.
+- Métricas e KPIs Macro (Total de Jornadas, Volume de Conversões, Taxa de Conversão).
+- Funil de Conversão segmentado pelos canais de aquisição.
 
-| Artifact | Format | Tables / contents |
-|----------|--------|-------------------|
-| `attribution_data.duckdb` | DuckDB | `fato_jornadas`, `dim_canais`, `resultados_atribuicao` |
-| `resultados_atribuicao.parquet` | Parquet | per-channel credit + revenue for all 5 models |
-| `fato_jornadas.parquet` | Parquet | full journey paths |
+**Como importar:**
+1. Com uma instância do Grafana executando na mesma rede do seu PostgreSQL, navegue para `Dashboards -> New -> Import`.
+2. Realize o upload do arquivo contido neste repositório: `dashboards/grafana_dashboard.json`.
+3. No momento da importação, conecte a variável `DS_POSTGRES` apontando para o seu DataSource PostgreSQL interno.
+4. *(Opcional)*: Se for realizar mudanças estruturais, você pode regenerar o arquivo json através da execução de `python dashboards/build_dashboard.py`.
 
-Re-runs are idempotent (`CREATE OR REPLACE TABLE` + fresh inserts).
+---
 
-## Visualization — Grafana (RF5.1, RF5.2)
-
-`dashboards/grafana_dashboard.json` is a portable dashboard querying the DuckDB
-store via the [DuckDB datasource plugin](https://github.com/motherduck-oss/grafana-duckdb-datasource).
-Regenerate it with `python dashboards/build_dashboard.py`.
-
-**Panels:**
-- 4 KPIs: total journeys, conversions, conversion rate, total revenue
-- **Revenue by model per channel** (RF5.1) — bar chart, 5 models as series
-- Conversion credit by model per channel — bar chart
-- **Conversion funnel per channel** (RF5.2) — Sessions → Conversions from `dim_canais`
-- Attribution results detail table
-
-**Import (UI):** Dashboards → New → Import → upload `grafana_dashboard.json` →
-pick the DuckDB datasource for the `DS_DUCKDB` variable.
-
-**Import (API):** create a service-account token, then:
-
-```bash
-GRAFANA_TOKEN=<your-token>
-jq -n --slurpfile d dashboards/grafana_dashboard.json '{
-  dashboard: ($d[0] | .id=null | .uid=null),
-  folderUid: null, overwrite: true,
-  message: "import marketing attribution dashboard"
-}' | curl -s -X POST http://localhost:3000/api/dashboards/db \
-  -H "Authorization: Bearer $GRAFANA_TOKEN" \
-  -H "Content-Type: application/json" -d @-
+## 🗂️ Estrutura do Projeto
+```text
+├── src/
+│   ├── main.py            # Orquestração do Pipeline
+│   ├── config.py          # Gerenciamento de Configuração via .env
+│   ├── ingestion.py       # Extração através da API do GCP BigQuery
+│   ├── preprocessing.py   # Transformação e montagem de jornadas
+│   ├── persistence.py     # Carga no Postgres e exportação em Parquet
+│   └── models/            # Módulos com Algoritmos de Atribuição
+├── tests/                 # Suíte de Testes Unitários
+├── dashboards/            # Artefatos JSON do Grafana e scripts
+└── docker-compose.yml     # Definição e integração de serviços
 ```
 
-The DuckDB datasource must point at the pipeline's `data/attribution_data.duckdb`
-(mount the file into the Grafana container if Grafana runs in Docker). A sample
-DuckDB populated with synthetic journeys is written to `data/` on first run for
-immediate testing.
-
-## License
-
-MIT
+## 📄 Licença
+Este projeto é distribuído sob a licença MIT. Veja o arquivo `LICENSE` para todos os detalhes.
