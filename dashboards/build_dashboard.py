@@ -76,31 +76,42 @@ def _target(sql: str, ref_id: str = "A") -> dict:
 
 
 def _stat(
-    panel_id: int, title: str, sql: str, unit: str, grid: dict, color_mode: str = "value"
+    panel_id: int, title: str, sql: str, unit: str, grid: dict, description: str, color: str = "green"
 ) -> dict:
     return {
         "id": panel_id,
         "type": "stat",
         "title": title,
+        "description": description,
+        "transparent": True,
         "gridPos": grid,
         "datasource": POSTGRES,
         "targets": [_target(sql)],
         "options": {
             "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": False},
-            "colorMode": color_mode,
-            "graphMode": "area",
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto",
             "orientation": "auto",
             "textMode": "auto",
         },
-        "fieldConfig": {"defaults": {"unit": unit}, "overrides": []},
+        "fieldConfig": {
+            "defaults": {
+                "unit": unit,
+                "color": {"mode": "fixed", "fixedColor": color}
+            },
+            "overrides": []
+        },
     }
 
 
-def _barchart(panel_id: int, title: str, sql: str, grid: dict, unit: str = "none") -> dict:
+def _barchart(panel_id: int, title: str, sql: str, grid: dict, description: str, unit: str = "none") -> dict:
     return {
         "id": panel_id,
         "type": "barchart",
         "title": title,
+        "description": description,
+        "transparent": True,
         "gridPos": grid,
         "datasource": POSTGRES,
         "targets": [_target(sql)],
@@ -110,18 +121,18 @@ def _barchart(panel_id: int, title: str, sql: str, grid: dict, unit: str = "none
             "xTickLabelSpacing": 0,
             "showValue": "auto",
             "stacking": "normal",
-            "groupWidth": 0.7,
-            "barWidth": 0.97,
-            "barRadius": 0,
+            "groupWidth": 0.8,
+            "barWidth": 0.9,
+            "barRadius": 4,
             "fullHighlight": False,
-            "tooltip": {"mode": "single", "sort": "none"},
-            "legend": {"displayMode": "list", "placement": "bottom", "showLegend": True},
+            "tooltip": {"mode": "multi", "sort": "desc"},
+            "legend": {"displayMode": "table", "placement": "bottom", "showLegend": True, "calcs": []},
         },
         "fieldConfig": {
             "defaults": {
                 "unit": unit,
                 "color": {"mode": "palette-classic"},
-                "custom": {"lineWidth": 0, "fillOpacity": 80},
+                "custom": {"lineWidth": 0, "fillOpacity": 90},
             },
             "overrides": [],
         },
@@ -134,71 +145,84 @@ def build_dashboard() -> dict:
             "id": 1,
             "type": "text",
             "title": "",
-            "gridPos": {"x": 0, "y": 0, "w": 24, "h": 2},
+            "transparent": True,
+            "gridPos": {"x": 0, "y": 0, "w": 24, "h": 3},
             "options": {
                 "mode": "markdown",
                 "content": (
-                    "# Omni-Channel Marketing Attribution\n"
-                    "Multi-touch attribution across **First-Click · Last-Click · Linear · "
-                    "Markov Chains · Shapley Value**. Source: PostgreSQL (`resultados_atribuicao`, "
-                    "`dim_canais`, `fato_jornadas`)."
+                    "# 🎯 Omni-Channel Marketing Attribution\n\n"
+                    "Welcome to the **Marketing Attribution Dashboard**. This view provides a comparative analysis of how different models—from traditional heuristics to advanced game-theoretic approaches—distribute conversion credit across your marketing channels.\n\n"
+                    "**Models included**: First-Click, Last-Click, Linear, Markov Chains (Probabilistic), and Shapley Value (Game Theory)."
                 ),
             },
         },
         _stat(
             2,
-            "Total journeys",
+            "Total Journeys",
             "SELECT COUNT(*) AS v FROM fato_jornadas",
             "short",
-            {"x": 0, "y": 2, "w": 6, "h": 4},
+            {"x": 0, "y": 3, "w": 6, "h": 4},
+            "Total number of marketing journeys (sessions grouped by user) tracked in the dataset.",
+            "blue"
         ),
         _stat(
             3,
-            "Conversions",
+            "Total Conversions",
             "SELECT COUNT(*) AS v FROM fato_jornadas WHERE converted",
             "short",
-            {"x": 6, "y": 2, "w": 6, "h": 4},
+            {"x": 6, "y": 3, "w": 6, "h": 4},
+            "Number of journeys that culminated in a transaction.",
+            "green"
         ),
         _stat(
             4,
-            "Conversion rate",
+            "Conversion Rate",
             "SELECT AVG(CAST(converted AS INTEGER)) AS v FROM fato_jornadas",
             "percentunit",
-            {"x": 12, "y": 2, "w": 6, "h": 4},
+            {"x": 12, "y": 3, "w": 6, "h": 4},
+            "Percentage of journeys that resulted in a successful conversion.",
+            "orange"
         ),
         _stat(
             5,
-            "Total revenue",
+            "Total Revenue",
             "SELECT COALESCE(SUM(transaction_revenue), 0) AS v FROM fato_jornadas",
             "currencyUSD",
-            {"x": 18, "y": 2, "w": 6, "h": 4},
+            {"x": 18, "y": 3, "w": 6, "h": 4},
+            "Total monetary value generated across all converted journeys.",
+            "purple"
         ),
         _barchart(
             6,
-            "Revenue by attribution model (per channel) — RF5.1",
+            "Revenue by Attribution Model",
             MODEL_REVENUE_SQL,
-            {"x": 0, "y": 6, "w": 12, "h": 10},
+            {"x": 0, "y": 7, "w": 12, "h": 10},
+            "Compares how much revenue is credited to each channel according to the different attribution models. (Requirement: RF5.1)",
             unit="currencyUSD",
         ),
         _barchart(
             7,
-            "Conversion credit by model (per channel)",
+            "Conversion Credit by Model",
             MODEL_CREDIT_SQL,
-            {"x": 12, "y": 6, "w": 12, "h": 10},
+            {"x": 12, "y": 7, "w": 12, "h": 10},
+            "Displays the number of conversions attributed to each channel across all models.",
             unit="short",
         ),
         _barchart(
             8,
-            "Conversion funnel by channel (Sessions → Conversions) — RF5.2",
+            "Conversion Funnel (Sessions to Conversions)",
             FUNNEL_SQL,
-            {"x": 0, "y": 16, "w": 24, "h": 10},
+            {"x": 0, "y": 17, "w": 24, "h": 10},
+            "Visualizes the drop-off from total sessions to actual conversions for each marketing channel. (Requirement: RF5.2)",
             unit="short",
         ),
         {
             "id": 9,
             "type": "table",
-            "title": "Attribution results (detail)",
-            "gridPos": {"x": 0, "y": 26, "w": 24, "h": 8},
+            "title": "Attribution Results (Detail)",
+            "description": "Tabular breakdown of credit and revenue assigned to each channel by model. Ranked by Shapley Value.",
+            "transparent": True,
+            "gridPos": {"x": 0, "y": 27, "w": 24, "h": 8},
             "datasource": POSTGRES,
             "targets": [_target(TABLE_SQL)],
             "options": {
@@ -206,7 +230,19 @@ def build_dashboard() -> dict:
                 "sortBy": [{"displayName": "Shapley", "desc": True}],
                 "cellHeight": "sm",
             },
-            "fieldConfig": {"defaults": {"custom": {"align": "auto"}}, "overrides": []},
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {"align": "auto"}
+                },
+                "overrides": [
+                    {
+                        "matcher": {"id": "byName", "options": "shapley"},
+                        "properties": [
+                            {"id": "custom.displayMode", "value": "color-background"}
+                        ]
+                    }
+                ]
+            },
         },
     ]
 
@@ -214,6 +250,7 @@ def build_dashboard() -> dict:
         "id": None,
         "uid": None,
         "title": "Marketing Attribution Pipeline",
+        "description": "Multi-touch attribution models including Markov Chains and Shapley Value",
         "tags": ["marketing-attribution", "markov", "shapley", "postgresql"],
         "timezone": "browser",
         "schemaVersion": 39,
@@ -224,7 +261,7 @@ def build_dashboard() -> dict:
         "liveNow": False,
         "weekStart": "",
         "editable": True,
-        "graphTooltip": 0,
+        "graphTooltip": 1,
         "templating": {
             "list": [
                 {

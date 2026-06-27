@@ -2,6 +2,7 @@
   "id": null,
   "uid": null,
   "title": "Marketing Attribution Pipeline",
+  "description": "Multi-touch attribution models including Markov Chains and Shapley Value",
   "tags": [
     "marketing-attribution",
     "markov",
@@ -20,7 +21,7 @@
   "liveNow": false,
   "weekStart": "",
   "editable": true,
-  "graphTooltip": 0,
+  "graphTooltip": 1,
   "templating": {
     "list": [
       {
@@ -47,24 +48,27 @@
       "id": 1,
       "type": "text",
       "title": "",
+      "transparent": true,
       "gridPos": {
         "x": 0,
         "y": 0,
         "w": 24,
-        "h": 2
+        "h": 3
       },
       "options": {
         "mode": "markdown",
-        "content": "# Omni-Channel Marketing Attribution\nMulti-touch attribution across **First-Click · Last-Click · Linear · Markov Chains · Shapley Value**. Source: PostgreSQL (`resultados_atribuicao`, `dim_canais`, `fato_jornadas`)."
+        "content": "# 🎯 Omni-Channel Marketing Attribution\n\nWelcome to the **Marketing Attribution Dashboard**. This view provides a comparative analysis of how different models—from traditional heuristics to advanced game-theoretic approaches—distribute conversion credit across your marketing channels.\n\n**Models included**: First-Click, Last-Click, Linear, Markov Chains (Probabilistic), and Shapley Value (Game Theory)."
       }
     },
     {
       "id": 2,
       "type": "stat",
-      "title": "Total journeys",
+      "title": "Total Journeys",
+      "description": "Total number of marketing journeys (sessions grouped by user) tracked in the dataset.",
+      "transparent": true,
       "gridPos": {
         "x": 0,
-        "y": 2,
+        "y": 3,
         "w": 6,
         "h": 4
       },
@@ -94,13 +98,18 @@
           "values": false
         },
         "colorMode": "value",
-        "graphMode": "area",
+        "graphMode": "none",
+        "justifyMode": "auto",
         "orientation": "auto",
         "textMode": "auto"
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "short"
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
         },
         "overrides": []
       }
@@ -108,10 +117,12 @@
     {
       "id": 3,
       "type": "stat",
-      "title": "Conversions",
+      "title": "Total Conversions",
+      "description": "Number of journeys that culminated in a transaction.",
+      "transparent": true,
       "gridPos": {
         "x": 6,
-        "y": 2,
+        "y": 3,
         "w": 6,
         "h": 4
       },
@@ -141,13 +152,18 @@
           "values": false
         },
         "colorMode": "value",
-        "graphMode": "area",
+        "graphMode": "none",
+        "justifyMode": "auto",
         "orientation": "auto",
         "textMode": "auto"
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "short"
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          }
         },
         "overrides": []
       }
@@ -155,10 +171,12 @@
     {
       "id": 4,
       "type": "stat",
-      "title": "Conversion rate",
+      "title": "Conversion Rate",
+      "description": "Percentage of journeys that resulted in a successful conversion.",
+      "transparent": true,
       "gridPos": {
         "x": 12,
-        "y": 2,
+        "y": 3,
         "w": 6,
         "h": 4
       },
@@ -188,13 +206,18 @@
           "values": false
         },
         "colorMode": "value",
-        "graphMode": "area",
+        "graphMode": "none",
+        "justifyMode": "auto",
         "orientation": "auto",
         "textMode": "auto"
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "percentunit"
+          "unit": "percentunit",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "orange"
+          }
         },
         "overrides": []
       }
@@ -202,10 +225,12 @@
     {
       "id": 5,
       "type": "stat",
-      "title": "Total revenue",
+      "title": "Total Revenue",
+      "description": "Total monetary value generated across all converted journeys.",
+      "transparent": true,
       "gridPos": {
         "x": 18,
-        "y": 2,
+        "y": 3,
         "w": 6,
         "h": 4
       },
@@ -235,13 +260,18 @@
           "values": false
         },
         "colorMode": "value",
-        "graphMode": "area",
+        "graphMode": "none",
+        "justifyMode": "auto",
         "orientation": "auto",
         "textMode": "auto"
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "currencyUSD"
+          "unit": "currencyUSD",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "purple"
+          }
         },
         "overrides": []
       }
@@ -249,10 +279,12 @@
     {
       "id": 6,
       "type": "barchart",
-      "title": "Revenue by attribution model (per channel) — RF5.1",
+      "title": "Revenue by Attribution Model",
+      "description": "Compares how much revenue is credited to each channel according to the different attribution models. (Requirement: RF5.1)",
+      "transparent": true,
       "gridPos": {
         "x": 0,
-        "y": 6,
+        "y": 7,
         "w": 12,
         "h": 10
       },
@@ -279,18 +311,19 @@
         "xTickLabelSpacing": 0,
         "showValue": "auto",
         "stacking": "normal",
-        "groupWidth": 0.7,
-        "barWidth": 0.97,
-        "barRadius": 0,
+        "groupWidth": 0.8,
+        "barWidth": 0.9,
+        "barRadius": 4,
         "fullHighlight": false,
         "tooltip": {
-          "mode": "single",
-          "sort": "none"
+          "mode": "multi",
+          "sort": "desc"
         },
         "legend": {
-          "displayMode": "list",
+          "displayMode": "table",
           "placement": "bottom",
-          "showLegend": true
+          "showLegend": true,
+          "calcs": []
         }
       },
       "fieldConfig": {
@@ -301,7 +334,7 @@
           },
           "custom": {
             "lineWidth": 0,
-            "fillOpacity": 80
+            "fillOpacity": 90
           }
         },
         "overrides": []
@@ -310,10 +343,12 @@
     {
       "id": 7,
       "type": "barchart",
-      "title": "Conversion credit by model (per channel)",
+      "title": "Conversion Credit by Model",
+      "description": "Displays the number of conversions attributed to each channel across all models.",
+      "transparent": true,
       "gridPos": {
         "x": 12,
-        "y": 6,
+        "y": 7,
         "w": 12,
         "h": 10
       },
@@ -340,18 +375,19 @@
         "xTickLabelSpacing": 0,
         "showValue": "auto",
         "stacking": "normal",
-        "groupWidth": 0.7,
-        "barWidth": 0.97,
-        "barRadius": 0,
+        "groupWidth": 0.8,
+        "barWidth": 0.9,
+        "barRadius": 4,
         "fullHighlight": false,
         "tooltip": {
-          "mode": "single",
-          "sort": "none"
+          "mode": "multi",
+          "sort": "desc"
         },
         "legend": {
-          "displayMode": "list",
+          "displayMode": "table",
           "placement": "bottom",
-          "showLegend": true
+          "showLegend": true,
+          "calcs": []
         }
       },
       "fieldConfig": {
@@ -362,7 +398,7 @@
           },
           "custom": {
             "lineWidth": 0,
-            "fillOpacity": 80
+            "fillOpacity": 90
           }
         },
         "overrides": []
@@ -371,10 +407,12 @@
     {
       "id": 8,
       "type": "barchart",
-      "title": "Conversion funnel by channel (Sessions → Conversions) — RF5.2",
+      "title": "Conversion Funnel (Sessions to Conversions)",
+      "description": "Visualizes the drop-off from total sessions to actual conversions for each marketing channel. (Requirement: RF5.2)",
+      "transparent": true,
       "gridPos": {
         "x": 0,
-        "y": 16,
+        "y": 17,
         "w": 24,
         "h": 10
       },
@@ -401,18 +439,19 @@
         "xTickLabelSpacing": 0,
         "showValue": "auto",
         "stacking": "normal",
-        "groupWidth": 0.7,
-        "barWidth": 0.97,
-        "barRadius": 0,
+        "groupWidth": 0.8,
+        "barWidth": 0.9,
+        "barRadius": 4,
         "fullHighlight": false,
         "tooltip": {
-          "mode": "single",
-          "sort": "none"
+          "mode": "multi",
+          "sort": "desc"
         },
         "legend": {
-          "displayMode": "list",
+          "displayMode": "table",
           "placement": "bottom",
-          "showLegend": true
+          "showLegend": true,
+          "calcs": []
         }
       },
       "fieldConfig": {
@@ -423,7 +462,7 @@
           },
           "custom": {
             "lineWidth": 0,
-            "fillOpacity": 80
+            "fillOpacity": 90
           }
         },
         "overrides": []
@@ -432,10 +471,12 @@
     {
       "id": 9,
       "type": "table",
-      "title": "Attribution results (detail)",
+      "title": "Attribution Results (Detail)",
+      "description": "Tabular breakdown of credit and revenue assigned to each channel by model. Ranked by Shapley Value.",
+      "transparent": true,
       "gridPos": {
         "x": 0,
-        "y": 26,
+        "y": 27,
         "w": 24,
         "h": 8
       },
@@ -472,7 +513,20 @@
             "align": "auto"
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "shapley"
+            },
+            "properties": [
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              }
+            ]
+          }
+        ]
       }
     }
   ],
