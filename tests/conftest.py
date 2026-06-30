@@ -16,7 +16,7 @@ def base_env() -> dict[str, str]:
     """Minimal valid environment for :class:`Settings`."""
     return {
         "GCP_PROJECT_ID": "test-project",
-        "GOOGLE_APPLICATION_CREDENTIALS": "/app/credentials/gcp-sa.json",
+        "GOOGLE_APPLICATION_CREDENTIALS": "credentials/gcp-sa.json",
         "BQ_START_DATE": "2016-08-01",
         "BQ_END_DATE": "2017-08-01",
     }

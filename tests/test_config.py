@@ -12,11 +12,11 @@ class TestSettingsFromEnv:
     def test_loads_required_and_defaults(self, base_env: dict[str, str]) -> None:
         settings = Settings.from_env(base_env)
         assert settings.gcp_project_id == "test-project"
-        assert settings.google_application_credentials == "/app/credentials/gcp-sa.json"
+        assert settings.google_application_credentials == "credentials/gcp-sa.json"
         assert settings.bq_dataset == "bigquery-public-data.google_analytics_sample"
         assert settings.bq_start_date == date(2016, 8, 1)
         assert settings.bq_end_date == date(2017, 8, 1)
-        assert settings.data_dir == "/app/data"
+        assert settings.data_dir == "data"
         assert settings.log_level == "INFO"
         assert settings.max_retries == 3
 

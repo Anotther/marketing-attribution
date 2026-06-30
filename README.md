@@ -1,6 +1,6 @@
 # 📊 Pipeline de Atribuição de Marketing Omni-Channel
 
-Um pipeline de engenharia de dados containerizado que extrai o histórico de sessões de marketing via BigQuery (Google Analytics) e aplica algoritmos avançados de atribuição para determinar a contribuição real de cada canal nas conversões do negócio. 
+Um pipeline de engenharia de dados em Python que extrai o histórico de sessões de marketing via BigQuery (Google Analytics) e aplica algoritmos avançados de atribuição para determinar a contribuição real de cada canal nas conversões do negócio. 
 
 Enquanto ferramentas comuns usam atribuição simplificada baseada em Last-Click, este projeto implementa modelos probabilísticos e baseados na teoria dos jogos (**Markov Chains** e **Shapley Value**) para distribuir o crédito de forma justa ao longo de toda a jornada de interações do usuário. 
 
@@ -26,7 +26,7 @@ O pipeline opera nos seguintes estágios:
 
 ## 🚀 Como Executar (Quick Start)
 
-A execução é simplificada via Docker. O banco de dados analítico (PostgreSQL) e o script principal do pipeline são orquestrados simultaneamente via Docker Compose.
+A execução local usa o Python do host com `.venv` e grava no PostgreSQL existente `postgres-dev`, exposto no host em `localhost:5433`.
 
 ### 1. Configuração do Ambiente
 Crie o arquivo de variáveis de ambiente a partir do exemplo fornecido e adicione suas credenciais do Google Cloud Platform (GCP) com acesso de leitura ao BigQuery:
@@ -42,23 +42,35 @@ mkdir -p credentials
 
 *(Lembre-se de ajustar o valor de `GCP_PROJECT_ID` no seu `.env` gerado).*
 
-### 2. Rodando o Pipeline
-O pipeline roda no formato de container efêmero (one-shot execution). Ele faz o processamento dos dados, efetua a gravação no banco, gera os artefatos locais e finaliza a execução com sucesso.
+### 2. Ambiente Python
 
 ```bash
-docker compose up --build
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-dev.txt -r requirements.txt
 ```
-> O Docker irá inicializar o banco PostgreSQL e na sequência rodar todo o fluxo em Python.
+
+### 3. Rodando o Pipeline
+Exporte as variáveis do `.env` e execute o módulo principal:
+
+```bash
+set -a
+source .env
+set +a
+.venv/bin/python -m src.main
+```
+
+> O `DATABASE_URL` padrão do `.env.example` aponta para `postgresql://user:pass@localhost:5433/marketing_db`, compatível com o container existente `postgres-dev`.
 
 ---
 
 ## 🛠️ Desenvolvimento Local
 
-Caso queira estender o pipeline ou rodar as rotinas de verificação localmente sem utilizar os containers:
+Caso queira estender o pipeline ou rodar as rotinas de verificação localmente:
 
 ```bash
 # Configurar o ambiente virtual (Python 3.11+)
-python -m venv venv && source venv/bin/activate
+python -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt -r requirements.txt
 
 # Verificação de qualidade de código (Lint e Tipagem - integrados com o CI)
@@ -114,8 +126,7 @@ A aplicação acompanha um painel analítico no Grafana validando todas as ponta
 │   ├── persistence.py     # Carga no Postgres e exportação em Parquet
 │   └── models/            # Módulos com Algoritmos de Atribuição
 ├── tests/                 # Suíte de Testes Unitários
-├── dashboards/            # Artefatos JSON do Grafana e scripts
-└── docker-compose.yml     # Definição e integração de serviços
+└── dashboards/            # Artefatos JSON do Grafana e scripts
 ```
 
 ## 📄 Licença

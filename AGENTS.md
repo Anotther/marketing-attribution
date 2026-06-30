@@ -4,29 +4,37 @@
 - Responda sempre em português brasileiro (pt-BR).
 
 ## Dev environment tips
-- Install dependencies with `npm install` before running scaffolds.
-- Use `npm run dev` for the interactive TypeScript session that powers local experimentation.
-- Run `npm run build` to refresh the CommonJS bundle in `dist/` before shipping changes.
-- Store generated artefacts in `.context/` so reruns stay deterministic.
+- Use Python 3.11+ para desenvolvimento local.
+- Crie um ambiente virtual antes de instalar dependências: `python -m venv .venv && source .venv/bin/activate`.
+- Instale dependências com `pip install -r requirements-dev.txt -r requirements.txt`.
+- Execute o pipeline no host com `.venv/bin/python -m src.main`.
+- Configure `.env` a partir de `.env.example`, exporte as variáveis no shell e forneça credenciais GCP em `credentials/`.
+- Use o PostgreSQL existente `postgres-dev` via `localhost:5433`; não crie container da aplicação para desenvolvimento local.
+- Guarde artefatos gerados pelo pipeline em `data/`; não use `.context/` para outputs de execução.
 
 ## Testing instructions
-- Execute `npm run test` to run the Jest suite.
-- Append `-- --watch` while iterating on a failing spec.
-- Trigger `npm run build && npm run test` before opening a PR to mimic CI.
-- Add or update tests alongside any generator or CLI changes.
+- Execute `pytest` para rodar a suíte configurada no `pyproject.toml`.
+- Use `pytest tests/<arquivo>.py -k <nome>` ao iterar em uma falha específica.
+- Rode `ruff check .`, `ruff format --check .` e `mypy` para lint, formatação e tipagem.
+- Antes de abrir PR, execute `ruff check . && ruff format --check . && mypy && pytest`.
+- Adicione ou atualize testes junto de mudanças em `src/`, modelos de atribuição, persistência, ingestão ou CLI/scripts.
 
 ## PR instructions
-- Follow Conventional Commits (for example, `feat(scaffolding): add doc links`).
-- Cross-link new scaffolds in `docs/README.md` and `agents/README.md` so future agents can find them.
-- Attach sample CLI output or generated markdown when behaviour shifts.
-- Confirm the built artefacts in `dist/` match the new source changes.
+- Siga Conventional Commits (por exemplo, `feat(models): add attribution metric`).
+- Descreva impactos em dados, schema, BigQuery, PostgreSQL ou dashboards quando aplicável.
+- Anexe saída de exemplo do CLI/pipeline ou paths dos Parquet gerados quando o comportamento mudar.
+- Confirme que artefatos em `data/` foram regenerados apenas quando a mudança exigir e não inclua credenciais ou dados sensíveis.
 
 ## Repository map
-- `data/` — explain what lives here and when agents should edit it.
-- `docs/` — explain what lives here and when agents should edit it.
-- `PROJECT_SETUP.md/` — explain what lives here and when agents should edit it.
+- `src/` — código Python do pipeline de atribuição: configuração, ingestão BigQuery, pré-processamento, modelos, persistência e logging.
+- `src/models/` — algoritmos de atribuição, incluindo heurísticas, Markov e Shapley.
+- `tests/` — testes pytest para pipeline, modelos, configuração, ingestão e persistência.
+- `data/` — artefatos Parquet gerados pelo pipeline para consumo analítico; edite manualmente apenas quando a tarefa envolver outputs versionados ou documentação do diretório.
+- `dashboards/` — dashboard Grafana JSON e script Python para regeneração.
+- `docs/` — documentação funcional/produto existente, incluindo `docs/PRD.md`.
+- `.context/` — documentação e playbooks auxiliares para agentes; não trate como destino de artefatos do pipeline.
+- `PROJECT_SETUP.md` — notas de setup do projeto; atualize quando fluxos de instalação ou execução mudarem.
 
 ## AI Context References
 - Documentation index: `.context/docs/README.md`
 - Agent playbooks: `.context/agents/README.md`
-- Contributor guide: `CONTRIBUTING.md`

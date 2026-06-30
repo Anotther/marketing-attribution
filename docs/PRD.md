@@ -7,7 +7,7 @@
 
 ## 1. Resumo Executivo
 
-Pipeline containerizado de atribuição de marketing multi-touch que processa jornadas de usuários do Google Analytics (BigQuery), aplica cinco modelos de atribuição (First-Click, Last-Click, Linear, **Markov Chains** e **Shapley Value**) e gera outputs estruturados no PostgreSQL e em Parquet. Os resultados alimentam dashboards interativos em Grafana e Power BI, permitindo decisões baseadas em dados sobre alocação de orçamento de marketing.
+Pipeline Python de atribuição de marketing multi-touch que processa jornadas de usuários do Google Analytics (BigQuery), aplica cinco modelos de atribuição (First-Click, Last-Click, Linear, **Markov Chains** e **Shapley Value**) e gera outputs estruturados no PostgreSQL e em Parquet. Os resultados alimentam dashboards interativos em Grafana e Power BI, permitindo decisões baseadas em dados sobre alocação de orçamento de marketing.
 
 ### Métricas de Sucesso
 
@@ -33,7 +33,7 @@ Aplicar modelos estatísticos avançados — **Markov Chains** (probabilístico)
 
 - **Engenharia de Dados**: Ingestão, transformação e persistência de dados em escala
 - **Modelagem Estatística**: Implementação de modelos probabilísticos e game-theoretic
-- **DevOps/Containerização**: Docker, volumes compartilhados, integração com homelab
+- **Operação em Homelab**: execução Python no host, integração com PostgreSQL/Grafana existentes
 - **Visualização de Dados**: Grafana (operacional) + Power BI (executivo)
 
 ### Stakeholders
@@ -52,7 +52,7 @@ Aplicar modelos estatísticos avançados — **Markov Chains** (probabilístico)
 
 1. **OBJ-1**: Implementar pipeline completo de ingestão → processamento → persistência → visualização
 2. **OBJ-2**: Calcular atribuição por 5 modelos distintos e comparar resultados
-3. **OBJ-3**: Containerizar a aplicação para execução one-shot ou agendada no homelab
+3. **OBJ-3**: Executar a aplicação no host via `.venv`, com possibilidade de agendamento por cron
 
 ### KPIs Técnicos
 
@@ -60,7 +60,7 @@ Aplicar modelos estatísticos avançados — **Markov Chains** (probabilístico)
 |-----|-----------|-----------------|
 | Completude funcional | Todos os RFs implementados | Checklist de testes |
 | Qualidade do código | Type hints, docstrings, linting | `mypy`, `ruff`, `pytest --cov` |
-| Reprodutibilidade | Qualquer pessoa consegue rodar | `docker compose up` funciona do zero |
+| Reprodutibilidade | Qualquer pessoa consegue rodar | `.venv/bin/python -m src.main` funciona com `.env` configurado |
 | Documentação | README autoexplicativo | Review externo |
 
 ---
@@ -75,7 +75,7 @@ flowchart LR
         BQ[("BigQuery\nGA Sample Dataset")]
     end
 
-    subgraph Container["🐳 Docker Container (Python 3.11)"]
+    subgraph Runtime["🐍 Host Python (.venv)"]
         direction TB
         ING["ingestion.py\n(BigQuery API)"]
         PRE["preprocessing.py\n(Montagem de Jornadas)"]
@@ -89,7 +89,7 @@ flowchart LR
         PER["persistence.py\n(PostgreSQL + Parquet)"]
     end
 
-    subgraph Storage["💾 Volume Docker / External"]
+    subgraph Storage["💾 PostgreSQL existente + arquivos locais"]
         PG[("postgres-dev")]
         PQ["*.parquet files"]
     end
@@ -108,23 +108,20 @@ flowchart LR
     PQ -->|"Rede SMB"| PBI
 ```
 
-### 4.2 Arquitetura no Homelab (Arcane)
+### 4.2 Arquitetura no Homelab
 
-O projeto integra-se ao ecossistema de homelab gerenciado pelo **Arcane** com foco em simplicidade:
+O projeto integra-se ao homelab com foco em simplicidade: o pipeline roda no host
+com `.venv` e grava no PostgreSQL existente.
 
 ```mermaid
 graph TB
-    subgraph Arcane["🏠 Homelab (Arcane)"]
-        DC["docker-compose.yml"]
-        
-        subgraph PythonContainer["Container: marketing-attribution"]
-            APP["Python App\n(one-shot / cron)"]
-        end
-        
-        subgraph SharedVolume["Volume: ./data"]
+    subgraph Host["🏠 Host local"]
+        APP[".venv/bin/python -m src.main\n(one-shot / cron)"]
+
+        subgraph LocalData["Diretório: ./data"]
             FILES["Parquet Files"]
         end
-        
+
         subgraph ExistingInfra["Infraestrutura Existente"]
             DB[("postgres-dev")]
             GRAFANA["Grafana Container"]
@@ -132,9 +129,8 @@ graph TB
         end
     end
 
-    DC --> PythonContainer
     APP --> DB
-    APP --> SharedVolume
+    APP --> LocalData
     DB --> GRAFANA
     FILES --> SMB
     SMB --> PBI["Power BI Desktop"]
@@ -142,9 +138,9 @@ graph TB
 
 **Princípios de Integração:**
 - **Banco Analítico** — PostgreSQL externo via `DATABASE_URL`
-- **Compartilhamento via Volume Docker** — sem APIs adicionais, sem service mesh
-- **Container efêmero** — executa, gera dados, encerra (mode one-shot)
-- **Agendamento opcional** — via cron do host ou restart policy do Docker
+- **Arquivos locais** — Parquet gerado em `data/`, sem APIs adicionais
+- **Execução one-shot** — executa, gera dados, encerra
+- **Agendamento opcional** — via cron do host
 
 ---
 
@@ -154,7 +150,7 @@ graph TB
 
 | ID | Requisito | Critério de Aceitação |
 |----|-----------|----------------------|
-| **RF1.1** | Autenticação via Service Account GCP com permissão de leitura no BigQuery | Container conecta ao BQ sem erro de auth; credentials **não** commitados no git |
+| **RF1.1** | Autenticação via Service Account GCP com permissão de leitura no BigQuery | Pipeline conecta ao BQ sem erro de auth; credentials **não** commitados no git |
 | **RF1.2** | Extrair dados do `bigquery-public-data.google_analytics_sample.ga_sessions_*` usando `google-cloud-bigquery` | Query retorna dados com campos: `fullVisitorId`, `channelGrouping`, `visitNumber`, `totals.transactions`, `totals.transactionRevenue`, `date` |
 | **RF1.3** | Limpar e transformar dados brutos usando `pandas` | Nulos tratados, tipos corretos, revenue convertido de micros (÷10⁶), log de registros descartados |
 | **RF1.4** | Suportar parâmetros configuráveis para date range da extração | ENV vars ou config YAML para `START_DATE` e `END_DATE` |
@@ -204,14 +200,14 @@ graph TB
 | Categoria | Requisito | Especificação |
 |-----------|-----------|---------------|
 | **Performance** | Processamento do dataset completo | < 5 minutos em hardware de homelab |
-| **Performance** | Memória do container | < 2GB RAM |
+| **Performance** | Memória do processo Python | < 2GB RAM |
 | **Confiabilidade** | Tratamento de erros | Logging estruturado com `logging` module; exit codes significativos |
 | **Confiabilidade** | Retry de conexão BigQuery | 3 tentativas com backoff exponencial |
 | **Segurança** | Credenciais GCP | Montadas via volume, nunca no git (`.gitignore`) |
 | **Segurança** | Sem secrets hardcoded | Variáveis de ambiente para configuração sensível |
 | **Manutenibilidade** | Qualidade do código | Type hints, docstrings, `ruff` linting, cobertura > 80% |
 | **Manutenibilidade** | Testes unitários | `pytest` para cada módulo de modelo |
-| **Portabilidade** | Reprodutibilidade | `docker compose up` funciona em qualquer máquina com Docker |
+| **Portabilidade** | Reprodutibilidade | Ambiente virtual Python + `DATABASE_URL` documentado |
 | **Observabilidade** | Logging | Logs estruturados com timestamp, nível, módulo, e métricas de execução |
 | **Observabilidade** | Métricas de execução | Tempo por fase, registros processados, taxa de erro — escritos no log final |
 
@@ -222,8 +218,6 @@ graph TB
 | Componente | Tecnologia | Versão | Justificativa |
 |-----------|------------|--------|---------------|
 | **Runtime** | Python | 3.11 | LTS, performance, typing moderno |
-| **Container** | Docker + docker-compose | Latest | Padrão de mercado, integração Arcane |
-| **Base Image** | `python:3.11-slim` | — | Imagem leve (~150MB), sem overhead |
 | **BigQuery Client** | `google-cloud-bigquery` | ≥3.x | SDK oficial do Google |
 | **DataFrames** | `pandas` | ≥2.x | Standard para manipulação de dados |
 | **Grafos/Markov** | `networkx` | ≥3.x | Biblioteca de grafos de referência em Python |
@@ -246,8 +240,6 @@ marketing-attribution/
 │       └── ci.yml                    # CI: lint, type-check, test
 ├── docs/
 │   └── PRD.md                        # Este documento
-├── docker-compose.yml                # Orquestração do container
-├── Dockerfile                        # Build da imagem Python
 ├── requirements.txt                  # Dependências de produção
 ├── requirements-dev.txt              # Dependências de desenvolvimento
 ├── .env.example                      # Template de variáveis de ambiente
@@ -256,10 +248,9 @@ marketing-attribution/
 ├── LICENSE                           # Licença do projeto
 ├── credentials/                      # 🔒 NÃO commitado
 │   └── gcp-service-account.json
-├── data/                             # 📁 Volume Docker — saída dos dados
+├── data/                             # 📁 Saída local dos dados
 │   ├── resultados_atribuicao.parquet
-│   ├── fato_jornadas.parquet
-│   └── funil_conversao.parquet
+│   └── fato_jornadas.parquet
 ├── src/
 │   ├── __init__.py
 │   ├── main.py                       # Entrypoint: orquestra o pipeline
@@ -318,7 +309,7 @@ marketing-attribution/
 
 | Coluna | Tipo | Descrição |
 |--------|------|-----------|
-| `channel_name` | `VARCHAR` (PK) | Nome do canal |
+| `channel` | `VARCHAR` (PK) | Nome do canal |
 | `first_click_credit` | `DOUBLE` | Crédito pelo modelo First-Click |
 | `last_click_credit` | `DOUBLE` | Crédito pelo modelo Last-Click |
 | `linear_credit` | `DOUBLE` | Crédito pelo modelo Linear |
@@ -341,7 +332,7 @@ gantt
     axisFormat  %d/%m
 
     section Fase 1: Fundação
-        Setup do projeto (repo, Docker, CI)         :f1, 2026-06-26, 2d
+        Setup do projeto (repo, Python, CI)         :f1, 2026-06-26, 2d
         Módulo de configuração (config.py)           :f2, after f1, 1d
 
     section Fase 2: Ingestão
@@ -372,7 +363,7 @@ gantt
 
 | Milestone | Entregável | Critério de Done |
 |-----------|-----------|-----------------|
-| **M1: Foundation** | Repo + Docker + CI funcionando | `docker compose build` sem erros |
+| **M1: Foundation** | Repo + ambiente Python + CI funcionando | `pytest`, `ruff` e `mypy` sem erros |
 | **M2: Data In** | Dados do BigQuery extraídos e limpos | DataFrame com >10k sessões válidas |
 | **M3: Models** | 5 modelos implementados e testados | Testes passando, créditos somam 100% |
 | **M4: Data Out** | PostgreSQL + Parquet gerados | Arquivos queryáveis e validados |
@@ -387,9 +378,9 @@ gantt
 |---|-------|:------------:|:-------:|-----------|
 | R1 | Dataset do GA não acessível (billing, permissões) | Média | Alto | Manter dataset mock local para desenvolvimento; documentar setup do GCP |
 | R2 | Shapley Value computacionalmente caro (2^n subsets) | Alta | Médio | Limitar a canais com >X sessões; implementar caching de coalizões |
-| R3 | Conexão com Postgres falha | Baixa | Médio | Validar DATABASE_URL via wait-for-it |
+| R3 | Conexão com Postgres falha | Baixa | Médio | Validar `DATABASE_URL` e status do container `postgres-dev` |
 | R4 | Schema do GA muda entre versões | Baixa | Baixo | Queries parametrizadas, validação de schema na ingestão |
-| R5 | Container consome muita RAM | Média | Médio | Chunk processing no pandas, monitorar via `docker stats` |
+| R5 | Processo Python consome muita RAM | Média | Médio | Chunk processing no pandas, monitorar uso de memória do host |
 | R6 | Credenciais GCP vazam no git | Baixa | **Crítico** | `.gitignore`, pre-commit hook, scan de secrets no CI |
 
 ---
@@ -398,7 +389,7 @@ gantt
 
 | # | Entregável | Formato | Critério de Done |
 |---|-----------|---------|-----------------|
-| E1 | Aplicação Python containerizada | `Dockerfile` + `docker-compose.yml` + código fonte | `docker compose up` executa sem erros |
+| E1 | Aplicação Python executável no host | `.venv` + `.env.example` + código fonte | `.venv/bin/python -m src.main` executa sem erros |
 | E2 | Relatório Técnico | `README.md` no repositório | Explica arquitetura, matemática (Markov/Shapley), e como rodar |
 | E3 | Arquivos de dados | Tabelas no Postgres + `.parquet` na pasta `data/` | Gerados e validados pelo pipeline |
 | E4 | Dashboard Grafana | `dashboards/grafana_dashboard.json` | Importável, renderiza dados reais |

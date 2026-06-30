@@ -1,9 +1,8 @@
 """Pipeline entrypoint.
 
 Orchestrates the attribution pipeline phases: ingestion -> preprocessing ->
-attribution modelling -> persistence. As of Milestone 3, ingestion, journey
-assembly and all five attribution models are implemented; only persistence
-(DuckDB + Parquet) remains pending (M4).
+attribution modelling -> persistence. The pipeline writes analytical tables to
+PostgreSQL and exports Parquet files for BI/dashboard consumption.
 """
 
 from __future__ import annotations
@@ -26,7 +25,7 @@ from src.preprocessing import build_journeys, journey_stats
 
 logger = logging.getLogger("attribution.main")
 
-#: Phases still pending in later milestones (M5).
+#: Phases still pending in later milestones.
 PENDING_PHASES: tuple[str, ...] = ()
 
 
@@ -116,7 +115,7 @@ def run_pipeline(
         result.conversions,
         len(result.artifacts),
     )
-    result.message = "pipeline complete; visualization pending (M5)"
+    result.message = "pipeline complete; PostgreSQL, Parquet and Grafana outputs ready"
     return result
 
 

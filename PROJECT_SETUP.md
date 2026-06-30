@@ -13,13 +13,13 @@
 | **Branch principal** | `main` |
 | **Licença** | MIT |
 | **Linguagem** | Python 3.11 |
-| **Container** | Docker (python:3.11-slim) |
+| **Runtime local** | Python 3.11+ com `.venv` |
 
 ### Topics do Repositório
 
 ```
 marketing-attribution · markov-chains · shapley-value · bigquery · postgresql
-data-engineering · python · docker · grafana · power-bi · parquet
+data-engineering · python · grafana · power-bi · parquet
 multi-touch-attribution · homelab · data-pipeline · analytics
 ```
 
@@ -43,7 +43,7 @@ multi-touch-attribution · homelab · data-pipeline · analytics
 
 | # | Milestone | Issue | Fase |
 |---|-----------|-------|------|
-| 1 | **Foundation** — Repo + Docker + CI | [#1](https://github.com/Anotther/marketing-attribution/issues/1) | Setup |
+| 1 | **Foundation** — Repo + CI | [#1](https://github.com/Anotther/marketing-attribution/issues/1) | Setup |
 | 2 | **Data In** — BigQuery Ingestion & Cleaning | [#2](https://github.com/Anotther/marketing-attribution/issues/2) | Ingestão |
 | 3 | **Models** — 5 Attribution Models | [#3](https://github.com/Anotther/marketing-attribution/issues/3) | Processamento |
 | 4 | **Data Out** — PostgreSQL + Parquet | [#4](https://github.com/Anotther/marketing-attribution/issues/4) | Persistência |
@@ -61,7 +61,7 @@ main ← develop ← feature/M{N}-{description}
 ```
 
 **Convenção de branches:**
-- `feature/M1-docker-setup` — Feature ligada ao Milestone 1
+- `feature/M1-project-setup` — Feature ligada ao Milestone 1
 - `feature/M3-markov-model` — Feature ligada ao Milestone 3
 - `fix/M2-bigquery-auth` — Fix ligado ao Milestone 2
 
@@ -74,7 +74,7 @@ feat(ingestion): add BigQuery extraction with date range params
 fix(markov): normalize removal effect probabilities
 docs(readme): add architecture diagram
 test(shapley): add coalition subset tests
-chore(docker): update python base image to 3.11.9
+chore(ci): update python version
 ```
 
 ### PR Workflow
@@ -92,8 +92,8 @@ chore(docker): update python base image to 3.11.9
 
 ### Pré-requisitos
 
-- Docker + Docker Compose
 - Python 3.11+ (para desenvolvimento local)
+- Container PostgreSQL existente (`postgres-dev`) exposto em `localhost:5433`
 - Git
 - `gh` CLI (opcional, para gerenciar issues)
 - Service Account GCP (para acessar BigQuery)
@@ -113,16 +113,19 @@ cp .env.example .env
 mkdir -p credentials/
 # Copiar gcp-service-account.json para credentials/
 
-# Criar ambiente virtual (desenvolvimento local)
-python -m venv venv
-source venv/bin/activate
+# Criar ambiente virtual
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt -r requirements-dev.txt
 
-# Executar via Docker
-docker compose up --build
+# Exportar variáveis e executar o pipeline no host
+set -a
+source .env
+set +a
+.venv/bin/python -m src.main
 
 # Executar testes
-pytest tests/ -v --cov=src
+.venv/bin/python -m pytest tests/ -v --cov=src
 ```
 
 ### Variáveis de Ambiente
@@ -130,12 +133,12 @@ pytest tests/ -v --cov=src
 ```env
 # .env.example
 GCP_PROJECT_ID=your-project-id
-GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/gcp-service-account.json
+GOOGLE_APPLICATION_CREDENTIALS=credentials/gcp-service-account.json
 BQ_START_DATE=2016-08-01
 BQ_END_DATE=2017-08-01
-DATA_DIR=/app/data
+DATA_DIR=data
 LOG_LEVEL=INFO
-DATABASE_URL=postgresql://user:pass@postgres-dev:5432/marketing_db
+DATABASE_URL=postgresql://user:pass@localhost:5433/marketing_db
 ```
 
 ---
@@ -180,14 +183,12 @@ LIMIT 10;
 marketing-attribution/
 ├── .github/workflows/ci.yml    # CI pipeline
 ├── docs/PRD.md                 # Product Requirements Document
-├── docker-compose.yml          # Orquestração
-├── Dockerfile                  # Build image
 ├── requirements.txt            # Deps produção
 ├── requirements-dev.txt        # Deps desenvolvimento
 ├── .env.example                # Template de config
 ├── .gitignore                  # Exclusões
 ├── credentials/                # 🔒 Não commitado
-├── data/                       # 📁 Outputs (volume Docker)
+├── data/                       # 📁 Outputs Parquet
 ├── src/                        # Código fonte
 │   ├── main.py                 # Entrypoint
 │   ├── config.py               # Configurações

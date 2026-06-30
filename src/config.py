@@ -69,7 +69,7 @@ class Settings:
         if end_date < start_date:
             raise ConfigError("BQ_END_DATE must not be earlier than BQ_START_DATE")
 
-        data_dir = source.get("DATA_DIR", "/app/data").strip() or "/app/data"
+        data_dir = source.get("DATA_DIR", "data").strip() or "data"
         log_level = source.get("LOG_LEVEL", "INFO").strip().upper() or "INFO"
         if log_level not in {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}:
             raise ConfigError(f"Unsupported LOG_LEVEL: {log_level!r}")
