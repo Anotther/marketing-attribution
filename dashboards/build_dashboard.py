@@ -17,26 +17,26 @@ POSTGRES = {"type": "postgres", "uid": "${DS_POSTGRES}"}
 
 MODEL_REVENUE_SQL = """
 SELECT
-  channel_name,
+  channel,
   first_click_revenue  AS "First-Click",
   last_click_revenue   AS "Last-Click",
   linear_revenue       AS "Linear",
   markov_revenue       AS "Markov",
   shapley_revenue      AS "Shapley"
 FROM resultados_atribuicao
-ORDER BY channel_name
+ORDER BY channel
 """.strip()
 
 MODEL_CREDIT_SQL = """
 SELECT
-  channel_name,
+  channel,
   first_click_credit  AS "First-Click",
   last_click_credit   AS "Last-Click",
   linear_credit       AS "Linear",
   markov_credit       AS "Markov",
   shapley_credit      AS "Shapley"
 FROM resultados_atribuicao
-ORDER BY channel_name
+ORDER BY channel
 """.strip()
 
 FUNNEL_SQL = """
@@ -50,7 +50,7 @@ ORDER BY total_sessions DESC
 
 TABLE_SQL = """
 SELECT
-  channel_name,
+  channel,
   ROUND(first_click_credit, 3)  AS first_click,
   ROUND(last_click_credit, 3)   AS last_click,
   ROUND(linear_credit, 3)       AS linear,
@@ -76,7 +76,13 @@ def _target(sql: str, ref_id: str = "A") -> dict:
 
 
 def _stat(
-    panel_id: int, title: str, sql: str, unit: str, grid: dict, description: str, color: str = "green"
+    panel_id: int,
+    title: str,
+    sql: str,
+    unit: str,
+    grid: dict,
+    description: str,
+    color: str = "green",
 ) -> dict:
     return {
         "id": panel_id,
@@ -98,14 +104,21 @@ def _stat(
         "fieldConfig": {
             "defaults": {
                 "unit": unit,
-                "color": {"mode": "fixed", "fixedColor": color}
+                "color": {"mode": "fixed", "fixedColor": color},
             },
-            "overrides": []
+            "overrides": [],
         },
     }
 
 
-def _barchart(panel_id: int, title: str, sql: str, grid: dict, description: str, unit: str = "none") -> dict:
+def _barchart(
+    panel_id: int,
+    title: str,
+    sql: str,
+    grid: dict,
+    description: str,
+    unit: str = "none",
+) -> dict:
     return {
         "id": panel_id,
         "type": "barchart",
@@ -126,7 +139,12 @@ def _barchart(panel_id: int, title: str, sql: str, grid: dict, description: str,
             "barRadius": 4,
             "fullHighlight": False,
             "tooltip": {"mode": "multi", "sort": "desc"},
-            "legend": {"displayMode": "table", "placement": "bottom", "showLegend": True, "calcs": []},
+            "legend": {
+                "displayMode": "table",
+                "placement": "bottom",
+                "showLegend": True,
+                "calcs": [],
+            },
         },
         "fieldConfig": {
             "defaults": {
@@ -151,8 +169,12 @@ def build_dashboard() -> dict:
                 "mode": "markdown",
                 "content": (
                     "# 🎯 Omni-Channel Marketing Attribution\n\n"
-                    "Welcome to the **Marketing Attribution Dashboard**. This view provides a comparative analysis of how different models—from traditional heuristics to advanced game-theoretic approaches—distribute conversion credit across your marketing channels.\n\n"
-                    "**Models included**: First-Click, Last-Click, Linear, Markov Chains (Probabilistic), and Shapley Value (Game Theory)."
+                    "Welcome to the **Marketing Attribution Dashboard**. This view provides "
+                    "a comparative analysis of how different models—from traditional "
+                    "heuristics to advanced game-theoretic approaches—distribute "
+                    "conversion credit across your marketing channels.\n\n"
+                    "**Models included**: First-Click, Last-Click, Linear, Markov Chains "
+                    "(Probabilistic), and Shapley Value (Game Theory)."
                 ),
             },
         },
@@ -163,7 +185,7 @@ def build_dashboard() -> dict:
             "short",
             {"x": 0, "y": 3, "w": 6, "h": 4},
             "Total number of marketing journeys (sessions grouped by user) tracked in the dataset.",
-            "blue"
+            "blue",
         ),
         _stat(
             3,
@@ -172,7 +194,7 @@ def build_dashboard() -> dict:
             "short",
             {"x": 6, "y": 3, "w": 6, "h": 4},
             "Number of journeys that culminated in a transaction.",
-            "green"
+            "green",
         ),
         _stat(
             4,
@@ -181,7 +203,7 @@ def build_dashboard() -> dict:
             "percentunit",
             {"x": 12, "y": 3, "w": 6, "h": 4},
             "Percentage of journeys that resulted in a successful conversion.",
-            "orange"
+            "orange",
         ),
         _stat(
             5,
@@ -190,14 +212,17 @@ def build_dashboard() -> dict:
             "currencyUSD",
             {"x": 18, "y": 3, "w": 6, "h": 4},
             "Total monetary value generated across all converted journeys.",
-            "purple"
+            "purple",
         ),
         _barchart(
             6,
             "Revenue by Attribution Model",
             MODEL_REVENUE_SQL,
             {"x": 0, "y": 7, "w": 12, "h": 10},
-            "Compares how much revenue is credited to each channel according to the different attribution models. (Requirement: RF5.1)",
+            (
+                "Compares how much revenue is credited to each channel according to "
+                "the different attribution models. (Requirement: RF5.1)"
+            ),
             unit="currencyUSD",
         ),
         _barchart(
@@ -213,14 +238,20 @@ def build_dashboard() -> dict:
             "Conversion Funnel (Sessions to Conversions)",
             FUNNEL_SQL,
             {"x": 0, "y": 17, "w": 24, "h": 10},
-            "Visualizes the drop-off from total sessions to actual conversions for each marketing channel. (Requirement: RF5.2)",
+            (
+                "Visualizes the drop-off from total sessions to actual conversions "
+                "for each marketing channel. (Requirement: RF5.2)"
+            ),
             unit="short",
         ),
         {
             "id": 9,
             "type": "table",
             "title": "Attribution Results (Detail)",
-            "description": "Tabular breakdown of credit and revenue assigned to each channel by model. Ranked by Shapley Value.",
+            "description": (
+                "Tabular breakdown of credit and revenue assigned to each channel by model. "
+                "Ranked by Shapley Value."
+            ),
             "transparent": True,
             "gridPos": {"x": 0, "y": 27, "w": 24, "h": 8},
             "datasource": POSTGRES,
@@ -231,17 +262,13 @@ def build_dashboard() -> dict:
                 "cellHeight": "sm",
             },
             "fieldConfig": {
-                "defaults": {
-                    "custom": {"align": "auto"}
-                },
+                "defaults": {"custom": {"align": "auto"}},
                 "overrides": [
                     {
                         "matcher": {"id": "byName", "options": "shapley"},
-                        "properties": [
-                            {"id": "custom.displayMode", "value": "color-background"}
-                        ]
+                        "properties": [{"id": "custom.displayMode", "value": "color-background"}],
                     }
-                ]
+                ],
             },
         },
     ]

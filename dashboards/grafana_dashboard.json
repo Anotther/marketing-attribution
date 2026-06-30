@@ -302,7 +302,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  channel_name,\n  first_click_revenue  AS \"First-Click\",\n  last_click_revenue   AS \"Last-Click\",\n  linear_revenue       AS \"Linear\",\n  markov_revenue       AS \"Markov\",\n  shapley_revenue      AS \"Shapley\"\nFROM resultados_atribuicao\nORDER BY channel_name"
+          "rawSql": "SELECT\n  channel,\n  first_click_revenue  AS \"First-Click\",\n  last_click_revenue   AS \"Last-Click\",\n  linear_revenue       AS \"Linear\",\n  markov_revenue       AS \"Markov\",\n  shapley_revenue      AS \"Shapley\"\nFROM resultados_atribuicao\nORDER BY channel"
         }
       ],
       "options": {
@@ -366,7 +366,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  channel_name,\n  first_click_credit  AS \"First-Click\",\n  last_click_credit   AS \"Last-Click\",\n  linear_credit       AS \"Linear\",\n  markov_credit       AS \"Markov\",\n  shapley_credit      AS \"Shapley\"\nFROM resultados_atribuicao\nORDER BY channel_name"
+          "rawSql": "SELECT\n  channel,\n  first_click_credit  AS \"First-Click\",\n  last_click_credit   AS \"Last-Click\",\n  linear_credit       AS \"Linear\",\n  markov_credit       AS \"Markov\",\n  shapley_credit      AS \"Shapley\"\nFROM resultados_atribuicao\nORDER BY channel"
         }
       ],
       "options": {
@@ -494,7 +494,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  channel_name,\n  ROUND(first_click_credit, 3)  AS first_click,\n  ROUND(last_click_credit, 3)   AS last_click,\n  ROUND(linear_credit, 3)       AS linear,\n  ROUND(markov_credit, 3)       AS markov,\n  ROUND(shapley_credit, 3)      AS shapley,\n  ROUND(first_click_revenue, 2) AS first_click_rev,\n  ROUND(markov_revenue, 2)      AS markov_rev,\n  ROUND(shapley_revenue, 2)     AS shapley_rev\nFROM resultados_atribuicao\nORDER BY shapley_credit DESC"
+          "rawSql": "SELECT\n  channel,\n  ROUND(first_click_credit, 3)  AS first_click,\n  ROUND(last_click_credit, 3)   AS last_click,\n  ROUND(linear_credit, 3)       AS linear,\n  ROUND(markov_credit, 3)       AS markov,\n  ROUND(shapley_credit, 3)      AS shapley,\n  ROUND(first_click_revenue, 2) AS first_click_rev,\n  ROUND(markov_revenue, 2)      AS markov_rev,\n  ROUND(shapley_revenue, 2)     AS shapley_rev\nFROM resultados_atribuicao\nORDER BY shapley_credit DESC"
         }
       ],
       "options": {
