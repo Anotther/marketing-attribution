@@ -11,7 +11,11 @@ from src.main import PENDING_PHASES, PipelineResult, main, run_pipeline
 def _fake_persister(
     journeys: pd.DataFrame, results_full: pd.DataFrame, data_dir: str
 ) -> dict[str, str]:
-    return {"duckdb": f"{data_dir}/attribution_data.duckdb", "resultados_atribuicao": "x.parquet"}
+    return {
+        "postgres": "postgresql://localhost:5433/marketing_db",
+        "resultados_atribuicao": f"{data_dir}/resultados_atribuicao.parquet",
+        "fato_jornadas": f"{data_dir}/fato_jornadas.parquet",
+    }
 
 
 class TestRunPipeline:
@@ -30,15 +34,19 @@ class TestRunPipeline:
         assert result.journeys_rows == 2
         assert result.conversions == 1
         assert result.stats["unique_channels"] == 2.0
-        assert "duckdb" in result.artifacts
+        assert "postgres" in result.artifacts
+        assert "resultados_atribuicao" in result.artifacts
+        assert "fato_jornadas" in result.artifacts
+        assert "duckdb" not in result.artifacts
 
-    def test_message_reports_visualization_pending(
+    def test_message_reports_outputs_ready(
         self,
         settings,
         fake_ingester,  # type: ignore[no-untyped-def]
     ) -> None:
         result = run_pipeline(settings, ingester=fake_ingester, persister=_fake_persister)
-        assert "M5" in result.message
+        assert "PostgreSQL" in result.message
+        assert "Grafana" in result.message
 
     def test_default_persister_used_when_not_injected(
         self,

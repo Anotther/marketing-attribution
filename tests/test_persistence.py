@@ -8,6 +8,7 @@ from src.models import attribute_full
 from src.persistence import (
     FATO_JOURNEYS_PARQUET,
     RESULTADOS_PARQUET,
+    _safe_database_target,
     persist,
     persist_all,
 )
@@ -42,6 +43,11 @@ class TestPostgresStore:
         assert artifacts["resultados_atribuicao"] == str(tmp_path / RESULTADOS_PARQUET)
         assert artifacts["fato_jornadas"] == str(tmp_path / FATO_JOURNEYS_PARQUET)
 
+    def test_postgres_artifact_does_not_include_credentials(self) -> None:
+        target = _safe_database_target("postgresql://user:secret@localhost:5433/marketing_db")
+        assert target == "postgresql://localhost:5433/marketing_db"
+        assert "secret" not in target
+
 
 class TestIdempotency:
     def test_rerun_does_not_duplicate(self, journeys, results_full, tmp_path) -> None:  # type: ignore[no-untyped-def]
@@ -49,7 +55,7 @@ class TestIdempotency:
         kwargs = {"db_url": db_url, "parquet_dir": tmp_path}
         persist(journeys, results_full, **kwargs)
         persist(journeys, results_full, **kwargs)
-        
+
         df_fato = pd.read_parquet(tmp_path / FATO_JOURNEYS_PARQUET)
         assert len(df_fato) == 3
 
