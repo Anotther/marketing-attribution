@@ -17,9 +17,8 @@ select = ["E", "F", "I", "UP", "B", "SIM", "C4", "RET"]
 
 [tool.mypy]
 # mypy analyses against 3.12 syntax so bundled third-party stubs (e.g. numpy 2.x)
-# that use PEP-695 `type` statements parse cleanly. The RUNTIME stays Python
-# 3.11 (Dockerfile `python:3.11-slim` + CI `setup-python: 3.11`): any 3.12-only
-# syntax would be caught by the CI test job, which runs on a real 3.11.
+# that use PEP-695 `type` statements parse cleanly. The runtime target remains
+# Python 3.11+; any 3.12-only syntax is caught by the CI test job on Python 3.11.
 python_version = "3.12"
 strict = true
 warn_unused_ignores = true
@@ -32,7 +31,6 @@ files = ["src"]
 # keeps strict checking on our own code only and avoids descending into e.g.
 # google-cloud-bigquery internals.
 module = [
-    "duckdb.*",
     "networkx.*",
     "google.cloud.*",
     "google.*",
